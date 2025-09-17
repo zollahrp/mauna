@@ -24,7 +24,7 @@ export default function Home() {
             Cara seru dan efektif <br /> belajar bahasa isyarat!
           </h1>
           <div className="flex flex-col gap-4 max-w-sm">
-            <button className="w-full bg-[#FDC93A] hover:bg-[#e06e2d] text-white font-semibold px-6 py-3 rounded-lg shadow-md transition-colors">
+            <button className="w-full bg-[#ffbb00] hover:bg-[#e06e2d] text-white font-semibold px-6 py-3 rounded-lg shadow-md transition-colors">
               Mulai
             </button>
             <button className="w-full border border-gray-300 hover:bg-gray-100 text-gray-800 font-semibold px-6 py-3 rounded-lg transition">
