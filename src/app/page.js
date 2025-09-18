@@ -3,33 +3,52 @@
 import React, { useRef, useEffect } from "react";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 
-// Komponen Lottie dengan kontrol visibility
-function LottieWithVisibility({ src, loop, autoplay, ...props }) {
+// Komponen Lottie dengan kontrol visibility + scroll
+function LottieWithVisibility({ src, loop, autoplay, className, ...props }) {
   const lottieRef = useRef(null);
+  const containerRef = useRef(null);
 
   useEffect(() => {
-    function handleVisibility() {
+    function handleTabVisibility() {
       if (document.visibilityState === "visible") {
         lottieRef.current?.play();
       } else {
         lottieRef.current?.pause();
       }
     }
+    document.addEventListener("visibilitychange", handleTabVisibility);
 
-    document.addEventListener("visibilitychange", handleVisibility);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && document.visibilityState === "visible") {
+          lottieRef.current?.play();
+        } else {
+          lottieRef.current?.pause();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (containerRef.current) observer.observe(containerRef.current);
+
     return () => {
-      document.removeEventListener("visibilitychange", handleVisibility);
+      document.removeEventListener("visibilitychange", handleTabVisibility);
+      if (containerRef.current) observer.unobserve(containerRef.current);
+      observer.disconnect();
     };
   }, []);
 
   return (
-    <DotLottieReact
-      src={src}
-      loop={loop}
-      autoplay={autoplay}
-      lottieRef={lottieRef}
-      {...props}
-    />
+    <div ref={containerRef} className="w-full h-full">
+      <DotLottieReact
+        src={src}
+        loop={loop}
+        autoplay={autoplay}
+        lottieRef={lottieRef}
+        className={className} // sekarang valid
+        {...props}
+      />
+    </div>
   );
 }
 
@@ -44,7 +63,12 @@ function FeatureSection({ title, desc, lottieUrl, reverse }) {
       {/* Kolom 1 - Lottie */}
       <div className="flex justify-center md:w-1/2">
         <div className="w-[300px] h-[300px] md:w-[450px] md:h-[450px]">
-          <LottieWithVisibility src={lottieUrl} loop autoplay />
+          <LottieWithVisibility
+            src={lottieUrl}
+            loop
+            autoplay
+            className="w-full h-full object-contain" // 🔥 biar proporsional
+          />
         </div>
       </div>
 
