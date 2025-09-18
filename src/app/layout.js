@@ -1,15 +1,31 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import { Poppins, Inter, Fredoka, Roboto, Smooch_Sans } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Konfigurasi font Poppins untuk judul
+const poppins = Poppins({
   subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-poppins",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+// Konfigurasi font Inter untuk teks
+const inter = Inter({
   subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-inter",
+});
+
+const fredoka = Fredoka({
+  subsets: ["latin"],
+  weight: ["700"],
+  variable: "--font-fredoka",
+});
+
+const roboto = Roboto({
+  subsets: ["latin"],
+  weight: ["700"],
+  variable: "--font-roboto",
 });
 
 export const metadata = {
@@ -21,7 +37,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${poppins.variable} ${inter.variable} ${fredoka.variable} ${roboto.variable} antialiased`}
       >
         <Navbar />
         {children}

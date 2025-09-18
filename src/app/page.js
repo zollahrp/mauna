@@ -56,13 +56,13 @@ function LottieWithVisibility({ src, loop, autoplay, className, ...props }) {
 function FeatureSection({ title, desc, lottieUrl, reverse }) {
   return (
     <div
-      className={`container mx-auto max-w-screen-lg flex flex-col md:flex-row items-center py-16 gap-6 ${
+      className={`container mx-auto max-w-screen-lg bg-[#FAFAFA] flex flex-col md:flex-row items-center py-16 gap-0 ${
         reverse ? "md:flex-row-reverse" : ""
       }`}
     >
       {/* Kolom 1 - Lottie */}
       <div className="flex justify-center md:w-1/2">
-        <div className="w-[300px] h-[300px] md:w-[450px] md:h-[450px]">
+        <div className="w-[450px] h-[450px] md:w-[450px] md:h-[450px]">
           <LottieWithVisibility
             src={lottieUrl}
             loop
@@ -74,7 +74,7 @@ function FeatureSection({ title, desc, lottieUrl, reverse }) {
 
       {/* Kolom 2 - Teks */}
       <div className="md:w-1/2 text-left">
-        <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4 leading-snug">
+        <h2 className="text-3xl md:text-[2.75rem] font-fredoka text-[#ffbb00] mb-4 leading-snug tracking-wider">
           {title}
         </h2>
         <p className="text-gray-600 text-lg leading-relaxed">{desc}</p>
@@ -85,7 +85,7 @@ function FeatureSection({ title, desc, lottieUrl, reverse }) {
 
 export default function Home() {
   return (
-    <main className="w-full min-h-screen flex flex-col bg-white px-4 md:px-6">
+    <main className="w-full min-h-screen flex flex-col bg-[#FAFAFA] px-4 md:px-6">
       {/* Hero Section */}
       <section className="w-full min-h-screen flex flex-col items-center justify-center">
         <div className="container mx-auto max-w-screen-lg grid md:grid-cols-2 gap-0 items-center flex-1">
@@ -126,9 +126,9 @@ export default function Home() {
       </section>
 
       {/* Feature Sections */}
-      <section className="w-full flex flex-col bg-white">
+      <section className="w-full flex flex-col bg-[#FAFAFA] ">
         <FeatureSection
-          title="gratis. inklusif. menyenangkan."
+          title="gratis. seru. inklusif."
           desc="Belajar bahasa isyarat di MAUNA itu mudah dan menyenangkan! Dengan latihan singkat, kamu bisa menguasai gerakan dasar, menambah kosakata, dan berkomunikasi lebih inklusif setiap harinya."
           lottieUrl="https://lottie.host/9d11a902-ea15-4ae0-a23c-3a970aef3763/0r3Cgea1po.lottie"
           reverse
@@ -136,13 +136,13 @@ export default function Home() {
 
         <FeatureSection
           title="didukung teknologi & komunitas"
-          desc="MAUNA memadukan metode pembelajaran interaktif dengan teknologi pengenalan gerakan. Semua kursus dirancang agar efektif, praktis, dan relevan untuk kebutuhan komunikasi sehari-hari."
-          lottieUrl="https://lottie.host/9d11a902-ea15-4ae0-a23c-3a970aef3763/0r3Cgea1po.lottie"
+          desc="MAUNA memadukan metode pembelajaran interaktif dengan teknologi pengenalan gerakan. Semua metode dirancang agar efektif, praktis, dan relevan untuk kebutuhan komunikasi sehari-hari."
+          lottieUrl="https://lottie.host/75fc5bbf-0602-4eab-8a45-220acaaea357/16qAZGGhcM.lottie"
         />
 
         <FeatureSection
           title="tetap termotivasi"
-          desc="Kami menghadirkan pengalaman belajar seperti bermain game: ada poin, level, tantangan, dan maskot ceria yang selalu menyemangati kamu untuk terus berkembang!"
+          desc="Kami menghadirkan pengalaman belajar seperti bermain game, ada poin, level, tantangan, dan maskot ceria yang selalu menyemangati kamu untuk terus berkembang!"
           lottieUrl="https://lottie.host/9d11a902-ea15-4ae0-a23c-3a970aef3763/0r3Cgea1po.lottie"
           reverse
         />
