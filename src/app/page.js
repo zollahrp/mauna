@@ -5,28 +5,28 @@ import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 
 // Komponen Lottie dengan kontrol visibility + scroll
 function LottieWithVisibility({ src, loop, autoplay, className, ...props }) {
-  const lottieRef = useRef(null);
-  const containerRef = useRef(null);
+  const [show, setShow] = React.useState(true);
+  const containerRef = React.useRef(null);
 
-  useEffect(() => {
+  React.useEffect(() => {
+    let isIntersecting = false;
+
     function handleTabVisibility() {
-      if (document.visibilityState === "visible") {
-        lottieRef.current?.play();
+      if (isIntersecting && document.visibilityState === "visible") {
+        setShow(true);
       } else {
-        lottieRef.current?.pause();
+        setShow(false);
       }
     }
+
     document.addEventListener("visibilitychange", handleTabVisibility);
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting && document.visibilityState === "visible") {
-          lottieRef.current?.play();
-        } else {
-          lottieRef.current?.pause();
-        }
+        isIntersecting = entry.isIntersecting;
+        handleTabVisibility();
       },
-      { threshold: 0.1 }
+      { threshold: 0.2 } // Use 0.5 for more strict visibility (at least 50% visible)
     );
 
     if (containerRef.current) observer.observe(containerRef.current);
@@ -40,14 +40,15 @@ function LottieWithVisibility({ src, loop, autoplay, className, ...props }) {
 
   return (
     <div ref={containerRef} className="w-full h-full">
-      <DotLottieReact
-        src={src}
-        loop={loop}
-        autoplay={autoplay}
-        lottieRef={lottieRef}
-        className={className} // sekarang valid
-        {...props}
-      />
+      {show && (
+        <DotLottieReact
+          src={src}
+          loop={loop}
+          autoplay={autoplay}
+          className={className}
+          {...props}
+        />
+      )}
     </div>
   );
 }
@@ -56,7 +57,7 @@ function LottieWithVisibility({ src, loop, autoplay, className, ...props }) {
 function FeatureSection({ title, desc, lottieUrl, reverse }) {
   return (
     <div
-      className={`container mx-auto max-w-screen-lg bg-[#FAFAFA] flex flex-col md:flex-row items-center py-16 gap-0 ${
+      className={`container mx-auto max-w-screen-lg bg-[#FAFAFA] flex flex-col md:flex-row items-center py-14 gap-0 ${
         reverse ? "md:flex-row-reverse" : ""
       }`}
     >
@@ -130,7 +131,7 @@ export default function Home() {
         <FeatureSection
           title="gratis. seru. inklusif."
           desc="Belajar bahasa isyarat di MAUNA itu mudah dan menyenangkan! Dengan latihan singkat, kamu bisa menguasai gerakan dasar, menambah kosakata, dan berkomunikasi lebih inklusif setiap harinya."
-          lottieUrl="https://lottie.host/9d11a902-ea15-4ae0-a23c-3a970aef3763/0r3Cgea1po.lottie"
+          lottieUrl="https://lottie.host/802e7509-f131-45e9-aa8e-dc17e829b029/3ve5xmWybl.lottie"
           reverse
         />
 
@@ -143,14 +144,14 @@ export default function Home() {
         <FeatureSection
           title="tetap termotivasi"
           desc="Kami menghadirkan pengalaman belajar seperti bermain game, ada poin, level, tantangan, dan maskot ceria yang selalu menyemangati kamu untuk terus berkembang!"
-          lottieUrl="https://lottie.host/9d11a902-ea15-4ae0-a23c-3a970aef3763/0r3Cgea1po.lottie"
+          lottieUrl="https://lottie.host/f9e7fe7c-dfcd-4fd7-895f-83f208a23f5e/EOnsyHygcw.lottie"
           reverse
         />
 
         <FeatureSection
           title="pembelajaran yang dipersonalisasi"
           desc="MAUNA menggunakan AI untuk menyesuaikan materi sesuai kemampuanmu. Belajar jadi lebih cepat, tepat, dan sesuai dengan gaya belajarmu sendiri."
-          lottieUrl="https://lottie.host/9d11a902-ea15-4ae0-a23c-3a970aef3763/0r3Cgea1po.lottie"
+          lottieUrl="https://lottie.host/08313286-2dd7-48d0-968f-08d3cc0f5bb4/ww7seByAKD.lottie"
         />
       </section>
     </main>
