@@ -40,7 +40,9 @@ export default function RootLayout({ children }) {
         className={`${poppins.variable} ${inter.variable} ${fredoka.variable} ${roboto.variable} antialiased`}
       >
         <Navbar />
-        {children}
+        <main>
+          {children}
+        </main>
       </body>
     </html>
   );
