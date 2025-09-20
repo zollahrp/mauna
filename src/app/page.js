@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import Lottie from "react-lottie-player";
+import mauna from "../../public/mauna.json";
 
 // Komponen Lottie dengan kontrol visibility + scroll
 function LottieWithVisibility({ src, loop, autoplay, className, ...props }) {
@@ -26,7 +28,7 @@ function LottieWithVisibility({ src, loop, autoplay, className, ...props }) {
         isIntersecting = entry.isIntersecting;
         handleTabVisibility();
       },
-      { threshold: 0.2 } // Use 0.5 for more strict visibility (at least 50% visible)
+      { threshold: 0.2 } 
     );
 
     if (containerRef.current) observer.observe(containerRef.current);
@@ -52,6 +54,49 @@ function LottieWithVisibility({ src, loop, autoplay, className, ...props }) {
     </div>
   );
 }
+
+// src: animasi JSON, bukan URL .lottie!
+function ScrollLottie({ className, animationData }) {
+  const [progress, setProgress] = useState(0);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    function onScroll() {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const windowHeight = window.innerHeight;
+
+      const start = windowHeight;
+      const end = -rect.height;
+
+      const percent = Math.max(
+        0,
+        Math.min(1, (rect.top - end) / (start - end))
+      );
+
+      setProgress(percent);
+    }
+
+    window.addEventListener("scroll", onScroll);
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  if (!animationData) return null;
+
+  return (
+    <div ref={containerRef} className={className}>
+      <Lottie
+        animationData={animationData}
+        play={false}          // 🚫 jangan autoplay
+        loop={false}
+        goTo={progress * 100} // 🚀 pakai goTo, range 0–100
+        style={{ width: 400, height: 400 }}
+      />
+    </div>
+  );
+}
+
 
 // Komponen reusable section
 function FeatureSection({ title, desc, lottieUrl, reverse }) {
@@ -153,6 +198,14 @@ export default function Home() {
           desc="MAUNA menggunakan AI untuk menyesuaikan materi sesuai kemampuanmu. Belajar jadi lebih cepat, tepat, dan sesuai dengan gaya belajarmu sendiri."
           lottieUrl="https://lottie.host/08313286-2dd7-48d0-968f-08d3cc0f5bb4/ww7seByAKD.lottie"
         />
+      </section>
+
+      {/* 🔥 Scroll-based Animation */}
+      <section className="h-[200vh] flex flex-col justify-center items-center">
+        <h2 className="text-2xl font-bold mb-6">
+          Scroll biar animasi jalan ⬇️
+        </h2>
+        <ScrollLottie animationData={mauna} />
       </section>
     </main>
   );
