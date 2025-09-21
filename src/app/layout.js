@@ -1,6 +1,7 @@
 import { Poppins, Inter, Fredoka, Roboto, Smooch_Sans } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 // Konfigurasi font Poppins untuk judul
 const poppins = Poppins({
@@ -43,6 +44,7 @@ export default function RootLayout({ children }) {
         <main>
           {children}
         </main>
+        <Footer />
       </body>
     </html>
   );

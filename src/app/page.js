@@ -28,7 +28,7 @@ function LottieWithVisibility({ src, loop, autoplay, className, ...props }) {
         isIntersecting = entry.isIntersecting;
         handleTabVisibility();
       },
-      { threshold: 0.2 } 
+      { threshold: 0.2 }
     );
 
     if (containerRef.current) observer.observe(containerRef.current);
@@ -88,7 +88,7 @@ function ScrollLottie({ className, animationData }) {
     <div ref={containerRef} className={className}>
       <Lottie
         animationData={animationData}
-        play={false}          // 🚫 jangan autoplay
+        play={false} // 🚫 jangan autoplay
         loop={false}
         goTo={progress * 100} // 🚀 pakai goTo, range 0–100
         style={{ width: 400, height: 400 }}
@@ -96,7 +96,6 @@ function ScrollLottie({ className, animationData }) {
     </div>
   );
 }
-
 
 // Komponen reusable section
 function FeatureSection({ title, desc, lottieUrl, reverse }) {
@@ -113,7 +112,7 @@ function FeatureSection({ title, desc, lottieUrl, reverse }) {
             src={lottieUrl}
             loop
             autoplay
-            className="w-full h-full object-contain" // 🔥 biar proporsional
+            className="w-full h-full object-contain" 
           />
         </div>
       </div>
@@ -131,7 +130,7 @@ function FeatureSection({ title, desc, lottieUrl, reverse }) {
 
 export default function Home() {
   return (
-    <main className="w-full min-h-screen flex flex-col bg-[#FAFAFA] px-4 md:px-6">
+    <main className="w-full min-h-screen flex flex-col bg-[#FAFAFA]">
       {/* Hero Section */}
       <section className="w-full min-h-screen flex flex-col items-center justify-center">
         <div className="container mx-auto max-w-screen-lg grid md:grid-cols-2 gap-0 items-center flex-1">
@@ -201,11 +200,48 @@ export default function Home() {
       </section>
 
       {/* 🔥 Scroll-based Animation */}
-      <section className="h-[200vh] flex flex-col justify-center items-center">
-        <h2 className="text-2xl font-bold mb-6">
-          Scroll biar animasi jalan ⬇️
-        </h2>
+      <section className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-b from-[#FAFAFA] to-[##f3faf8] px-4">
+        <div className="text-center max-w-2xl">
+          <h2 className="text-4xl md:text-5xl font-fredoka font-bold text-[#ffbb00] mb-0 leading-tight">
+            Kapan pun, di mana pun ✨
+          </h2>
+          <p className="text-gray-600 text-lg md:text-xl mb-10">
+            Belajar bahasa isyarat fleksibel tanpa batas. Akses materi sesuai
+            ritme dan gaya belajarmu sendiri.
+          </p>
+        </div>
+
         <ScrollLottie animationData={mauna} />
+      </section>
+
+      {/* 👯 Belajar Bareng Section */}
+      <section className="w-full bg-[#f8cf09] ">
+        <div className="container mx-auto max-w-screen-lg flex flex-col md:flex-row items-center py-20 px-6 gap-10">
+          {/* Kiri - Lottie */}
+          <div className="flex justify-center md:w-1/2">
+            <div className="w-[350px] h-[350px] md:w-[400px] md:h-[400px]">
+              <DotLottieReact
+                src="https://lottie.host/0efcba23-29a8-4185-9a80-9e41d406d3c5/CJ4XTCxGPj.lottie"
+                loop
+                autoplay
+              />
+            </div>
+          </div>
+
+          {/* Kanan - Teks */}
+          <div className="md:w-1/2 text-center md:text-left">
+            <h2 className="text-3xl md:text-5xl font-fredoka font-bold text-gray-800 mb-6 leading-snug">
+              Belajar bareng dengan Mauna
+            </h2>
+            <p className="text-gray-700 text-lg md:text-xl leading-relaxed mb-6">
+              Jadikan Mauna sebagai teman belajarmu! Yuk, mulai latihan bahasa
+              isyarat dengan cara yang seru, inklusif, dan mudah diakses.
+            </p>
+            <button className="bg-white hover:bg-gray-100 text-gray-800 font-semibold px-6 py-3 rounded-lg shadow-md transition">
+              Mulai Sekarang
+            </button>
+          </div>
+        </div>
       </section>
     </main>
   );
