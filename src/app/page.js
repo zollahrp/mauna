@@ -1,9 +1,24 @@
 "use client";
 
 import React, { useRef, useEffect, useState } from "react";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
-import Lottie from "react-lottie-player";
+// import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+// import Lottie from "react-lottie-player";
 import mauna from "../../public/mauna.json";
+// import communication from "../../public/communication.json";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+
+import dynamic from "next/dynamic";
+
+// Lazy load DotLottieReact
+const DotLottieReact = dynamic(
+  () => import("@lottiefiles/dotlottie-react").then((mod) => mod.DotLottieReact),
+  { ssr: false }
+);
+
+// Lazy load react-lottie-player
+const Lottie = dynamic(() => import("react-lottie-player"), { ssr: false });
+
 
 // Komponen Lottie dengan kontrol visibility + scroll
 function LottieWithVisibility({ src, loop, autoplay, className, ...props }) {
@@ -112,7 +127,7 @@ function FeatureSection({ title, desc, lottieUrl, reverse }) {
             src={lottieUrl}
             loop
             autoplay
-            className="w-full h-full object-contain" 
+            className="w-full h-full object-contain"
           />
         </div>
       </div>
@@ -129,6 +144,7 @@ function FeatureSection({ title, desc, lottieUrl, reverse }) {
 }
 
 export default function Home() {
+  const router = useRouter();
   return (
     <main className="w-full min-h-screen flex flex-col bg-[#FAFAFA]">
       {/* Hero Section */}
@@ -151,12 +167,19 @@ export default function Home() {
               Cara seru dan efektif <br /> belajar bahasa isyarat!
             </h1>
             <div className="flex flex-col gap-4 max-w-sm">
-              <button className="w-full bg-[#ffbb00] hover:bg-[#e06e2d] text-white font-semibold px-6 py-3 rounded-lg shadow-md transition-colors">
+              <button
+                onClick={() => router.push("/auth/register")}
+                className="w-full bg-[#ffbb00] hover:bg-[#e06e2d] text-white font-semibold px-6 py-3 rounded-lg shadow-md transition-colors"
+              >
                 Mulai
               </button>
-              <button className="w-full border border-gray-300 hover:bg-gray-100 text-gray-800 font-semibold px-6 py-3 rounded-lg transition">
+
+              <Link
+                href="/auth/login"
+                className="w-full border border-gray-300 hover:bg-gray-100 text-gray-800 font-semibold px-6 py-3 rounded-lg transition"
+              >
                 Aku sudah punya akun
-              </button>
+              </Link>
             </div>
           </div>
         </div>

@@ -1,33 +1,12 @@
-import { Poppins, Inter, Fredoka, Roboto, Smooch_Sans } from "next/font/google";
+import { Poppins, Inter, Fredoka, Roboto } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+import ClientWrapper from "@/components/ClientWrapper";
 
-// Konfigurasi font Poppins untuk judul
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["400"],
-  variable: "--font-poppins",
-});
-
-// Konfigurasi font Inter untuk teks
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "700"],
-  variable: "--font-inter",
-});
-
-const fredoka = Fredoka({
-  subsets: ["latin"],
-  weight: ["700"],
-  variable: "--font-fredoka",
-});
-
-const roboto = Roboto({
-  subsets: ["latin"],
-  weight: ["700"],
-  variable: "--font-roboto",
-});
+// Font configs
+const poppins = Poppins({ subsets: ["latin"], weight: ["400"], variable: "--font-poppins" });
+const inter = Inter({ subsets: ["latin"], weight: ["400", "700"], variable: "--font-inter" });
+const fredoka = Fredoka({ subsets: ["latin"], weight: ["700"], variable: "--font-fredoka" });
+const roboto = Roboto({ subsets: ["latin"], weight: ["700"], variable: "--font-roboto" });
 
 export const metadata = {
   title: "Create Next App",
@@ -40,11 +19,7 @@ export default function RootLayout({ children }) {
       <body
         className={`${poppins.variable} ${inter.variable} ${fredoka.variable} ${roboto.variable} antialiased`}
       >
-        <Navbar />
-        <main>
-          {children}
-        </main>
-        <Footer />
+        <ClientWrapper>{children}</ClientWrapper>
       </body>
     </html>
   );
