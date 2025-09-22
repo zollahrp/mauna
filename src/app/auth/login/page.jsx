@@ -3,8 +3,11 @@
 import React, { useState } from "react";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  const router = useRouter();
+
   const [form, setForm] = useState({
     identifier: "", // email atau username
     password: "",
@@ -88,6 +91,7 @@ export default function LoginPage() {
         {/* Submit Button */}
         <button
           type="submit"
+          onClick={() => router.push("/kelas")}
           className="w-full bg-yellow-400 hover:bg-yellow-500 text-white font-semibold py-3 rounded-2xl shadow-[0_3px_0_#b45309] transition active:translate-y-0.5 cursor-pointer"
         >
           MASUK

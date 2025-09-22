@@ -3,8 +3,11 @@
 import React, { useState } from "react";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
+  const router = useRouter();
+
   const [form, setForm] = useState({
     username: "",
     email: "",
@@ -110,7 +113,8 @@ export default function RegisterPage() {
 
         {/* Submit Button */}
         <button
-          type="submit"
+          type="button"
+          onClick={() => router.push("/auth/login")}
           className="w-full bg-yellow-400 hover:bg-yellow-500 text-white font-semibold py-3 rounded-2xl shadow-[0_3px_0_#b45309] transition active:translate-y-0.5 cursor-pointer"
         >
           BUAT AKUN
