@@ -12,13 +12,13 @@ import dynamic from "next/dynamic";
 
 // Lazy load DotLottieReact
 const DotLottieReact = dynamic(
-  () => import("@lottiefiles/dotlottie-react").then((mod) => mod.DotLottieReact),
+  () =>
+    import("@lottiefiles/dotlottie-react").then((mod) => mod.DotLottieReact),
   { ssr: false }
 );
 
 // Lazy load react-lottie-player
 const Lottie = dynamic(() => import("react-lottie-player"), { ssr: false });
-
 
 // Komponen Lottie dengan kontrol visibility + scroll
 function LottieWithVisibility({ src, loop, autoplay, className, ...props }) {
@@ -168,17 +168,18 @@ export default function Home() {
             </h1>
             <div className="flex flex-col gap-4 max-w-sm">
               <button
+                type="button"
                 onClick={() => router.push("/auth/register")}
-                className="w-full bg-[#ffbb00] hover:bg-[#e06e2d] text-white font-semibold px-6 py-3 rounded-lg shadow-md transition-colors"
+                className="w-full bg-[#ffbb00] hover:bg-[#e6a800] text-white font-semibold py-3 rounded-2xl shadow-[0_3px_0_#b45309] transition active:translate-y-0.5 cursor-pointer"
               >
-                Mulai
+                MULAI
               </button>
 
               <Link
                 href="/auth/login"
-                className="w-full border border-gray-300 hover:bg-gray-100 text-gray-800 font-semibold px-6 py-3 rounded-lg transition"
+                className="w-full bg-white border border-gray-300 hover:bg-gray-50 text-[#ffbb00] font-semibold px-5 py-3 rounded-2xl shadow-[0_3px_0_#d1d5db] transition active:translate-y-0.5 text-center cursor-pointer"
               >
-                Aku sudah punya akun
+                AKU SUDAH PUNYA AKUN
               </Link>
             </div>
           </div>
@@ -260,7 +261,10 @@ export default function Home() {
               Jadikan Mauna sebagai teman belajarmu! Yuk, mulai latihan bahasa
               isyarat dengan cara yang seru, inklusif, dan mudah diakses.
             </p>
-            <button className="bg-white hover:bg-gray-100 text-gray-800 font-semibold px-6 py-3 rounded-lg shadow-md transition">
+            <button
+              type="button"
+              className="bg-white border border-gray-300 hover:bg-gray-50 text-[#ffbb00] font-semibold px-6 py-3 rounded-2xl shadow-[0_3px_0_#d1d5db] transition active:translate-y-0.5 cursor-pointer"
+            >
               Mulai Sekarang
             </button>
           </div>
