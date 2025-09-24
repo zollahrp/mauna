@@ -1,8 +1,8 @@
 import { Poppins, Inter, Fredoka, Roboto } from "next/font/google";
 import "./globals.css";
 import ClientWrapper from "@/components/ClientWrapper";
+import LoaderWrapper from "@/components/LoaderWrapper"; // 👈
 
-// Font configs
 const poppins = Poppins({ subsets: ["latin"], weight: ["400"], variable: "--font-poppins" });
 const inter = Inter({ subsets: ["latin"], weight: ["400", "700"], variable: "--font-inter" });
 const fredoka = Fredoka({ subsets: ["latin"], weight: ["700"], variable: "--font-fredoka" });
@@ -19,7 +19,9 @@ export default function RootLayout({ children }) {
       <body
         className={`${poppins.variable} ${inter.variable} ${fredoka.variable} ${roboto.variable} antialiased`}
       >
-        <ClientWrapper>{children}</ClientWrapper>
+        <LoaderWrapper>
+          <ClientWrapper>{children}</ClientWrapper>
+        </LoaderWrapper>
       </body>
     </html>
   );
