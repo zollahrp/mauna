@@ -1,54 +1,130 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import api from "@/lib/axios";
+import toast from "react-hot-toast";
 
 export default function Page() {
-  const [levels] = useState([
-    { id: 1, title: "Menawarkan dan menerima minuman", stars: 3, unlocked: true },
-    { id: 2, title: "Memesan makanan di restoran", stars: 2, unlocked: true },
-    { id: 3, title: "Berkenalan dengan orang baru", stars: 1, unlocked: true },
-    { id: 4, title: "Percakapan sehari-hari", stars: 0, unlocked: true },
-    { id: 5, title: "Belanja kebutuhan", stars: 0, unlocked: false },
-  ]);
+  const [data, setData] = useState(null);
+  const [activeLevel, setActiveLevel] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // level yang aktif
-  const [activeLevel, setActiveLevel] = useState(levels[0]);
+  useEffect(() => {
+    const fetchProgress = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          console.warn("Token tidak ditemukan");
+          return;
+        }
+
+        const res = await api.get("/api/user/soal/user/progress/summary");
+        setData(res.data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    // Jalankan hanya setelah token ada
+    if (typeof window !== "undefined" && localStorage.getItem("token")) {
+      fetchProgress();
+    }
+  }, []);
+
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-gray-500">
+        Memuat data level...
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-gray-500">
+        Tidak ada data level ditemukan.
+      </div>
+    );
+  }
+
+  const userDisplay = `@${data.username}'${data.user_id.toString().slice(-2)}`;
+  const levels = Object.entries(data.progress_by_level);
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header ala Duolingo */}
-      <div className="bg-[#32cd32] text-white p-6 rounded-xl flex items-center justify-between shadow-md">
+      {/* Header user */}
+      <div className="flex justify-between items-center bg-[#32cd32] text-white p-6 rounded-xl shadow-md">
         <div>
           <p className="text-sm font-semibold opacity-90">
-            ← BAGIAN 1, UNIT {activeLevel.id}
+            {userDisplay}
           </p>
-          <h2 className="text-lg font-bold mt-1">{activeLevel.title}</h2>
+          {activeLevel && (
+            <>
+              <p className="text-sm opacity-90">
+                ← BAGIAN 1, UNIT {activeLevel.level_id}
+              </p>
+              <h2 className="text-lg font-bold mt-1">
+                {Object.keys(data.progress_by_level).find(
+                  (key) =>
+                    data.progress_by_level[key].level_id === activeLevel.level_id
+                )}
+              </h2>
+            </>
+          )}
         </div>
+
         <button className="flex items-center gap-2 px-4 py-2 bg-[#2dbb2d] border border-white/30 rounded-lg font-semibold hover:bg-[#29a629] transition">
           📘 Buku Panduan
         </button>
       </div>
 
-      {/* Grid 4 kolom */}
-      <div className="grid grid-cols-4 gap-6">
-        {levels.map((level) => (
+      {/* Summary */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center text-sm text-gray-700">
+        <div className="bg-[#fff8e6] rounded-lg p-3 shadow-sm">
+          <p className="font-semibold text-[#ffbb00]">Sublevel</p>
+          <p>{data.overall_summary.completed_sublevels} / {data.overall_summary.total_sublevels}</p>
+        </div>
+        <div className="bg-[#f0f9ff] rounded-lg p-3 shadow-sm">
+          <p className="font-semibold text-[#00bfff]">Rata-rata Skor</p>
+          <p>{data.overall_summary.average_score.toFixed(1)}%</p>
+        </div>
+        <div className="bg-[#fff8e6] rounded-lg p-3 shadow-sm">
+          <p className="font-semibold text-[#ffbb00]">Total Bintang</p>
+          <p>{data.overall_summary.total_stars}</p>
+        </div>
+        <div className="bg-[#f0f9ff] rounded-lg p-3 shadow-sm">
+          <p className="font-semibold text-[#00bfff]">Tingkat Selesai</p>
+          <p>{(data.overall_summary.completion_rate * 100).toFixed(1)}%</p>
+        </div>
+      </div>
+
+      {/* Grid level */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+        {levels.map(([name, lvl]) => (
           <div
-            key={level.id}
-            onClick={() => setActiveLevel(level)}
+            key={lvl.level_id}
+            onClick={() => lvl.is_level_unlocked && setActiveLevel(lvl)}
             className={`cursor-pointer w-24 h-24 flex flex-col items-center justify-center rounded-2xl shadow-md transition-all duration-200 hover:scale-105
-              ${
-                level.unlocked
-                  ? "bg-gradient-to-br from-[#f0f9ff] to-[#fff8e6] border-2 border-[#ffbb00]"
-                  : "bg-gray-200 border-2 border-gray-300 opacity-70"
+              ${lvl.is_level_unlocked
+                ? "bg-gradient-to-br from-[#f0f9ff] to-[#fff8e6] border-2 border-[#ffbb00]"
+                : "bg-gray-200 border-2 border-gray-300 opacity-70 cursor-not-allowed"
               }`}
           >
-            {/* Nomor Level */}
+            {/* Nama level */}
             <span
-              className={`text-lg font-bold ${
-                level.unlocked ? "text-gray-800" : "text-gray-500"
-              }`}
+              className={`text-xs font-semibold mb-1 text-center ${lvl.is_level_unlocked ? "text-gray-800" : "text-gray-500"
+                }`}
             >
-              {level.id}
+              {name}
+            </span>
+
+            {/* Nomor */}
+            <span
+              className={`text-lg font-bold ${lvl.is_level_unlocked ? "text-gray-800" : "text-gray-500"
+                }`}
+            >
+              {lvl.level_id}
             </span>
 
             {/* Bintang */}
@@ -56,17 +132,16 @@ export default function Page() {
               {[...Array(3)].map((_, i) => (
                 <span
                   key={i}
-                  className={`text-sm ${
-                    i < level.stars ? "text-[#ffbb00]" : "text-gray-400"
-                  }`}
+                  className={`text-sm ${i < lvl.total_stars ? "text-[#ffbb00]" : "text-gray-400"
+                    }`}
                 >
                   ★
                 </span>
               ))}
             </div>
 
-            {/* Lock Icon */}
-            {!level.unlocked && (
+            {/* Lock icon */}
+            {!lvl.is_level_unlocked && (
               <span className="text-gray-500 text-sm mt-1">🔒</span>
             )}
           </div>
