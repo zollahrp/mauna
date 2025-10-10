@@ -10,7 +10,7 @@ const menuItems = [
   { name: "Papan Skor", icon: "/icons/score.png", href: "/kelas/leaderboard" },
   { name: "Profil", icon: "/icons/profile.png", href: "/kelas/profile" },
   { name: "Lainnya", icon: "/icons/more.png", href: "/lainnya" },
-  { name: "Keluar", icon: "/icons/logout.png", action: "logout" }, // 👈 tambahan logout di sini
+  { name: "Keluar", icon: "/icons/logout.png", action: "logout" },
 ];
 
 export default function Sidebar() {
@@ -18,63 +18,119 @@ export default function Sidebar() {
   const router = useRouter();
 
   const handleLogout = () => {
-    // hapus semua data session di localStorage
     localStorage.removeItem("Profile info");
     localStorage.removeItem("token");
-
-    // redirect ke halaman login
     router.push("/auth/login");
   };
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 min-h-screen flex flex-col p-4 font-[var(--font-poppins)]">
-      {/* Logo */}
-      <div className="flex items-center gap-2 mb-8 px-2">
-        <Image src="/logo_mauna.png" alt="Mauna Logo" width={150} height={150} />
-      </div>
+    <>
+      {/* 💻 Sidebar untuk Desktop */}
+      <aside className="hidden md:flex w-64 bg-white border-r border-gray-200 min-h-screen flex-col p-4 font-[var(--font-poppins)]">
+        {/* Logo */}
+        <div className="flex items-center gap-2 mb-8 px-2">
+          <Image
+            src="/logo_mauna.png"
+            alt="Mauna Logo"
+            width={150}
+            height={150}
+            priority
+          />
+        </div>
 
-      {/* Menu */}
-      <nav className="flex-1">
-        <ul className="space-y-2">
-          {menuItems.map((item) => {
+        {/* Menu */}
+        <nav className="flex-1">
+          <ul className="space-y-4">
+            {menuItems.map((item) => {
+              const isActive =
+                item.href &&
+                (item.href === "/kelas"
+                  ? pathname === "/kelas"
+                  : pathname.startsWith(item.href));
+
+              return (
+                <li key={item.name}>
+                  {item.action === "logout" ? (
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center gap-3 px-3 py-2 rounded-xl transition-colors border w-full text-left border-transparent text-red-600 hover:bg-red-50 hover:border-red-200"
+                    >
+                      <Image
+                        src={item.icon}
+                        alt={item.name}
+                        width={30}
+                        height={30}
+                      />
+                      <span>{item.name}</span>
+                    </button>
+                  ) : (
+                    <Link
+                      href={item.href}
+                      className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors border ${
+                        isActive
+                          ? "bg-[#f0f9ff] border-[#ffbb00] text-[#ffbb00] font-semibold"
+                          : "border-transparent text-gray-800 hover:bg-gray-50 hover:text-[#ffbb00]"
+                      }`}
+                    >
+                      <Image
+                        src={item.icon}
+                        alt={item.name}
+                        width={30}
+                        height={30}
+                      />
+                      <span>{item.name}</span>
+                    </Link>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      </aside>
+
+      {/* 📱 Bottom Navigation untuk Mobile */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 flex justify-around items-center py-2 md:hidden shadow-[0_-2px_6px_rgba(0,0,0,0.05)] font-[var(--font-poppins)]">
+        {menuItems
+          .filter((item) => item.name !== "Keluar") // hide logout here
+          .map((item) => {
             const isActive =
               item.href &&
               (item.href === "/kelas"
                 ? pathname === "/kelas"
                 : pathname.startsWith(item.href));
-
             return (
-              <li key={item.name}>
-                {item.action === "logout" ? (
-                  // 🔴 tombol logout (bukan Link)
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center gap-3 px-3 py-2 rounded-xl transition-colors border w-full text-left
-                      border-transparent text-red-600 hover:bg-red-50 hover:border-red-200"
-                  >
-                    <Image src={item.icon} alt={item.name} width={30} height={30} />
-                    <span>{item.name}</span>
-                  </button>
-                ) : (
-                  // 🔵 menu biasa
-                  <Link
-                    href={item.href}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors border
-                      ${
-                        isActive
-                          ? "bg-[#f0f9ff] border-[#ffbb00] text-[#ffbb00] font-semibold"
-                          : "border-transparent text-gray-800 hover:bg-gray-50 hover:text-[#ffbb00]"
-                      }`}
-                  >
-                    <Image src={item.icon} alt={item.name} width={30} height={30} />
-                    <span>{item.name}</span>
-                  </Link>
-                )}
-              </li>
+              <button
+                key={item.name}
+                onClick={() =>
+                  item.href ? router.push(item.href) : handleLogout()
+                }
+                className={`flex flex-col items-center gap-2 text-xs ${
+                  isActive
+                    ? "text-[#ffbb00] font-semibold"
+                    : "text-gray-600 hover:text-[#ffbb00]"
+                }`}
+              >
+                <Image
+                  src={item.icon}
+                  alt={item.name}
+                  width={36}
+                  height={36}
+                  className={`${isActive ? "opacity-100" : "opacity-80"}`}
+                />
+                <span>{item.name}</span>
+              </button>
             );
           })}
-        </ul>
+
+        {/* Logout di pojok kanan */}
+        <button
+          onClick={handleLogout}
+          className="flex flex-col items-center text-xs text-red-600 hover:text-red-700"
+        >
+          <Image src="/icons/logout.png" alt="Keluar" width={26} height={26} />
+          <span>Keluar</span>
+        </button>
       </nav>
-    </aside>
+    </>
   );
 }

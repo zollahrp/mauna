@@ -75,7 +75,7 @@ export default function ProfilePage() {
 
   const handleSave = async () => {
     try {
-      const res = await api.put("/api/auth/profile/update", formData);
+      const res = await api.patch("/api/auth/profile", formData);
       const updated = res.data?.data || { ...user, ...formData };
       setUser(updated);
       localStorage.setItem(

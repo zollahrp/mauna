@@ -24,7 +24,7 @@ const roboto = Roboto({
 });
 
 export const metadata = {
-    title: "MAUNA - Auth",
+    title: "Mauna - Auth",
     description: "Login atau daftar untuk belajar bahasa isyarat",
 };
 

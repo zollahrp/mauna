@@ -8,22 +8,17 @@ export default function KelasLayout({ children }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    // Cek apakah token ada di localStorage
     const token = localStorage.getItem("token");
-    if (token) {
-      setIsLoggedIn(true);
-    } else {
-      setIsLoggedIn(false);
-    }
+    setIsLoggedIn(!!token);
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-[#FFFFFF]">
+    <div className="flex flex-col md:flex-row min-h-screen bg-[#FFFFFF]">
       {/* Konten utama */}
-      <main className="flex-1 p-6">{children}</main>
+      <main className="flex-1 p-4 md:p-6">{children}</main>
 
-      {/* Sidebar kanan */}
-      <aside className="w-96 mr-80 p-6 flex flex-col gap-6">
+      {/* Sidebar kanan - hidden di mobile */}
+      <aside className="hidden md:flex w-full md:w-96 md:mr-80 p-6 flex-col gap-6">
         {/* Leaderboard */}
         <div className="rounded-2xl p-6 shadow-md bg-white">
           <h3 className="font-semibold text-gray-800 mb-3 text-lg">
@@ -66,7 +61,7 @@ export default function KelasLayout({ children }) {
           <p className="text-xs text-gray-500 mt-2">4 / 10</p>
         </div>
 
-        {/* Profil / Login (hanya muncul kalau BELUM login) */}
+        {/* Profil / Login */}
         {!isLoggedIn && (
           <div className="rounded-2xl p-6 shadow-md bg-white text-center">
             <p className="text-sm text-gray-700 mb-6">

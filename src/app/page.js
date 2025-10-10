@@ -146,7 +146,7 @@ function FeatureSection({ title, desc, lottieUrl, reverse }) {
 export default function Home() {
   const router = useRouter();
   return (
-    <main className="w-full min-h-screen flex flex-col bg-[#FAFAFA]">
+    <main className="w-full min-h-screen flex flex-col bg-[#FAFAFA] px-4 sm:px-0">
       {/* Hero Section */}
       <section className="w-full min-h-screen flex flex-col items-center justify-center">
         <div className="container mx-auto max-w-screen-lg grid md:grid-cols-2 gap-0 items-center flex-1">
@@ -171,7 +171,7 @@ export default function Home() {
                 type="button"
                 onClick={() => router.push("/auth/register")}
                 className="w-full bg-[#ffbb00] hover:bg-[#e6a800] text-white font-semibold py-3 rounded-2xl shadow-[0_3px_0_#b45309] transition active:translate-y-0.5 cursor-pointer"
-              >
+              > 
                 MULAI
               </button>
 
@@ -263,9 +263,10 @@ export default function Home() {
             </p>
             <button
               type="button"
+              onClick={() => router.push("/auth/register")}
               className="bg-white border border-gray-300 hover:bg-gray-50 text-[#ffbb00] font-semibold px-6 py-3 rounded-2xl shadow-[0_3px_0_#d1d5db] transition active:translate-y-0.5 cursor-pointer"
             >
-              Mulai Sekarang
+              MULAI SEKARANG
             </button>
           </div>
         </div>
