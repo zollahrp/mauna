@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export default function Footer() {
   return (
-    <footer className="relative z-10">
+    <footer className="relative z-10 bg-[#FAFAFA]">
       {/* Optional decorative wave on top */}
       <div className="absolute inset-x-0 -top-8 pointer-events-none">
         <svg

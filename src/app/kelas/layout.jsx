@@ -1,13 +1,24 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
 export default function KelasLayout({ children }) {
-  const isLoggedIn = false;
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    // Cek apakah token ada di localStorage
+    const token = localStorage.getItem("token");
+    if (token) {
+      setIsLoggedIn(true);
+    } else {
+      setIsLoggedIn(false);
+    }
+  }, []);
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-[#FFFFFF]">
       {/* Konten utama */}
       <main className="flex-1 p-6">{children}</main>
 
@@ -15,18 +26,25 @@ export default function KelasLayout({ children }) {
       <aside className="w-96 mr-80 p-6 flex flex-col gap-6">
         {/* Leaderboard */}
         <div className="rounded-2xl p-6 shadow-md bg-white">
-          <h3 className="font-semibold text-gray-800 mb-2 text-lg">
+          <h3 className="font-semibold text-gray-800 mb-3 text-lg">
             Buka Papan Skor!
           </h3>
-          <p className="text-sm text-gray-600">
-            Selesaikan{" "}
-            <span className="font-semibold text-[#ffbb00]">
-              9 pelajaran lagi
-            </span>{" "}
-            untuk mulai berkompetisi
-          </p>
-          <div className="mt-4">
-            <Image src="/icons/score.png" alt="Score" width={40} height={40} />
+
+          <div className="flex items-center gap-3">
+            <Image
+              src="/icons/score.png"
+              alt="Score"
+              width={42}
+              height={42}
+              className="flex-shrink-0"
+            />
+            <p className="text-sm text-gray-600 leading-snug">
+              Selesaikan{" "}
+              <span className="font-semibold text-[#ffbb00]">
+                9 pelajaran lagi
+              </span>{" "}
+              untuk mulai berkompetisi
+            </p>
           </div>
         </div>
 
@@ -48,7 +66,7 @@ export default function KelasLayout({ children }) {
           <p className="text-xs text-gray-500 mt-2">4 / 10</p>
         </div>
 
-        {/* Profil / Login */}
+        {/* Profil / Login (hanya muncul kalau BELUM login) */}
         {!isLoggedIn && (
           <div className="rounded-2xl p-6 shadow-md bg-white text-center">
             <p className="text-sm text-gray-700 mb-6">
