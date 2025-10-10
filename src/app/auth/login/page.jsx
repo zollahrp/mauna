@@ -4,9 +4,12 @@ import React, { useState } from "react";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import api from "@/lib/axios"; 
+import toast from "react-hot-toast";
 
 export default function LoginPage() {
   const router = useRouter();
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   const [form, setForm] = useState({
     identifier: "", // email atau username
@@ -14,6 +17,7 @@ export default function LoginPage() {
   });
 
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setForm({
@@ -22,9 +26,49 @@ export default function LoginPage() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Login submitted:", form);
+
+    if (!form.identifier || !form.password) {
+      toast.error("Harap isi semua kolom!", { duration: 3000 });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await api.post(`/api/auth/login`, {
+        email_or_username: form.identifier,
+        password: form.password,
+      });
+
+      console.log("Login response:", res.data);
+
+      if (res.data.success) {
+        toast.success("Kamu berhasil masuk, selamat belajar...", { duration: 3000 });
+
+        const token = res.data.access_token;
+
+        // Simpan ke localStorage dengan format yang benar
+        localStorage.setItem("token", token);
+        localStorage.setItem(
+          "ProfileInfo",
+          JSON.stringify({
+            AccessToken: token,
+            user: res.data.data,
+          })
+        );
+
+        // Arahkan ke halaman kelas
+        setTimeout(() => router.push("/kelas"), 1200);
+      } else {
+        toast.error(res.data.message || "Login gagal. Coba lagi.", { duration: 4000 });
+      }
+    } catch (err) {
+      console.error("Login error:", err.response?.data);
+      toast.error(err.response?.data?.message || "Terjadi kesalahan server.", { duration: 4000 });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -91,7 +135,6 @@ export default function LoginPage() {
         {/* Submit Button */}
         <button
           type="submit"
-          onClick={() => router.push("/kelas")}
           className="w-full bg-yellow-400 hover:bg-yellow-500 text-white font-semibold py-3 rounded-2xl shadow-[0_3px_0_#b45309] transition active:translate-y-0.5 cursor-pointer"
         >
           MASUK

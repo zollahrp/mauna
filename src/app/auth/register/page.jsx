@@ -1,12 +1,15 @@
 "use client";
 
 import React, { useState } from "react";
-import { Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft, Check, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import axios from "axios";
+import toast from "react-hot-toast";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   const [form, setForm] = useState({
     username: "",
@@ -16,24 +19,76 @@ export default function RegisterPage() {
   });
 
   const [showPassword, setShowPassword] = useState(false);
+  const [passwordErrors, setPasswordErrors] = useState([]);
 
   const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+
+    if (name === "password") {
+      validatePassword(value);
+    }
   };
 
-  const handleSubmit = (e) => {
+  // 🔐 Fungsi validasi password
+  const validatePassword = (password) => {
+    const errors = [];
+
+    if (password.length < 8)
+      errors.push("Password minimal 8 karakter");
+    if (!/[A-Z]/.test(password))
+      errors.push("Harus mengandung huruf besar (A-Z)");
+    if (!/[a-z]/.test(password))
+      errors.push("Harus mengandung huruf kecil (a-z)");
+    if (!/\d/.test(password))
+      errors.push("Harus mengandung angka (0-9)");
+
+    setPasswordErrors(errors);
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted:", form);
+
+    if (passwordErrors.length > 0) {
+      toast.error("Periksa kembali kata sandi kamu:\n" + passwordErrors.join("\n"), {
+        duration: 4000,
+      });
+      return;
+    }
+
+    try {
+      const res = await axios.post(`${API_URL}/api/auth/register`, {
+        username: form.username,
+        email: form.email,
+        password: form.password,
+        nama: form.nama,
+      });
+
+      console.log("Register success:", res.data);
+
+      if (res.data.success) {
+        toast.success("Akun berhasil dibuat! Silakan login.", {
+          duration: 3000,
+        });
+        router.push("/auth/login");
+      }
+      else {
+        toast.error(res.data.message || "Terjadi kesalahan saat registrasi.", {
+          duration: 4000,
+        });
+      }
+    } catch (err) {
+      console.error("Register error:", err.response?.data);
+      toast.error(err.response?.data?.message || "Gagal mendaftar. Coba lagi nanti.", {
+        duration: 4000,
+      });
+    }
   };
 
   return (
     <div className="min-h-screen relative bg-white font-poppins flex flex-col items-center justify-center px-4">
       {/* Header absolute */}
       <div className="absolute top-8 left-6 right-10 flex items-center justify-between">
-        {/* Back Button */}
         <Link
           href="/"
           className="flex items-center text-gray-400 hover:text-yellow-500 transition"
@@ -41,7 +96,6 @@ export default function RegisterPage() {
           <ArrowLeft size={24} />
         </Link>
 
-        {/* Masuk Button */}
         <Link
           href="/auth/login"
           className="bg-white border border-gray-300 hover:bg-gray-50 text-yellow-500 font-semibold px-5 py-2 rounded-2xl shadow-[0_3px_0_#d1d5db] transition active:translate-y-0.5 text-center cursor-pointer"
@@ -50,12 +104,10 @@ export default function RegisterPage() {
         </Link>
       </div>
 
-      {/* Title */}
       <h2 className="text-center text-xl md:text-2xl font-extrabold text-gray-800 mb-8 mt-10">
         Buat profilmu
       </h2>
 
-      {/* Form */}
       <form
         onSubmit={handleSubmit}
         className="w-full max-w-sm flex flex-col gap-3"
@@ -111,17 +163,44 @@ export default function RegisterPage() {
           </span>
         </div>
 
+        {/* ✅ Daftar Syarat Password */}
+        {form.password.length > 0 && (
+          <div className="text-sm mt-1 space-y-1">
+            <p className="font-semibold text-gray-600 mb-1">Syarat Kata Sandi:</p>
+            <ul className="space-y-1">
+              <PasswordRule
+                valid={form.password.length >= 8}
+                text="Minimal 8 karakter"
+              />
+              <PasswordRule
+                valid={/[A-Z]/.test(form.password)}
+                text="Mengandung huruf besar (A-Z)"
+              />
+              <PasswordRule
+                valid={/[a-z]/.test(form.password)}
+                text="Mengandung huruf kecil (a-z)"
+              />
+              <PasswordRule
+                valid={/\d/.test(form.password)}
+                text="Mengandung angka (0-9)"
+              />
+            </ul>
+          </div>
+        )}
+
         {/* Submit Button */}
         <button
-          type="button"
-          onClick={() => router.push("/auth/login")}
-          className="w-full bg-yellow-400 hover:bg-yellow-500 text-white font-semibold py-3 rounded-2xl shadow-[0_3px_0_#b45309] transition active:translate-y-0.5 cursor-pointer"
+          type="submit"
+          disabled={passwordErrors.length > 0}
+          className={`w-full py-3 rounded-2xl font-semibold shadow-[0_3px_0_#b45309] transition active:translate-y-0.5 cursor-pointer ${passwordErrors.length > 0
+            ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+            : "bg-yellow-400 hover:bg-yellow-500 text-white"
+            }`}
         >
           BUAT AKUN
         </button>
       </form>
 
-      {/* Bottom text */}
       <p className="mt-6 text-[11px] text-gray-500 text-center max-w-sm leading-relaxed">
         Dengan masuk ke <span className="font-bold">MAUNA</span>, kamu menyetujui{" "}
         <a href="#" className="text-yellow-500 font-medium hover:underline">
@@ -144,5 +223,15 @@ export default function RegisterPage() {
         Google berlaku.
       </p>
     </div>
+  );
+}
+
+// ✅ Komponen kecil untuk tiap aturan password
+function PasswordRule({ valid, text }) {
+  return (
+    <li className={`flex items-center gap-2 ${valid ? "text-green-600" : "text-red-500"}`}>
+      {valid ? <Check size={16} /> : <X size={16} />}
+      <span>{text}</span>
+    </li>
   );
 }

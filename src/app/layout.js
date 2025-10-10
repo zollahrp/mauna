@@ -1,4 +1,5 @@
 import { Poppins, Inter, Fredoka, Roboto } from "next/font/google";
+import { Toaster } from "react-hot-toast";
 import "./globals.css";
 import ClientWrapper from "@/components/ClientWrapper";
 import LoaderWrapper from "@/components/LoaderWrapper"; // 👈
@@ -21,6 +22,7 @@ export default function RootLayout({ children }) {
       >
         <LoaderWrapper>
           <ClientWrapper>{children}</ClientWrapper>
+          <Toaster position="top-right" reverseOrder={false} />
         </LoaderWrapper>
       </body>
     </html>

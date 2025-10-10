@@ -5,6 +5,8 @@ import Navbar from "./Navbar";
 import Footer from "./Footer";
 import Sidebar from "./Sidebar";
 
+import { Toaster } from "react-hot-toast";
+
 export default function ClientWrapper({ children }) {
   const pathname = usePathname();
 
