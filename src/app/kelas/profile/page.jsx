@@ -267,7 +267,9 @@ export default function ProfilePage() {
               src={
                 avatarFile
                   ? URL.createObjectURL(avatarFile)
-                  : `${process.env.NEXT_PUBLIC_API_URL}${user.avatar_url}`
+                  : user.avatar_url
+                  ? `${process.env.NEXT_PUBLIC_API_URL}${user.avatar_url}`
+                  : "/images/avatar_default.jpg"
               }
               alt="Foto Profil"
               fill
