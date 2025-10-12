@@ -18,32 +18,35 @@ export default function DictionaryPage() {
   useEffect(() => {
     const fetchKamus = async () => {
       try {
-        const res = await api.get("/public/kamus"); // ✅ Gunakan .get() untuk request GET
-        
-        // ✅ PERBAIKAN UTAMA: Gunakan res.data karena Axios sudah memproses JSON.
+        const res = await api.get("/public/kamus");
+        console.log(res.data, 'data kamus');
         const allData = res.data.data;
 
         if (allData && Array.isArray(allData)) {
           const abjad = allData.filter(
-            (item) => item.category === "ALPHABET" && isNaN(item.word_text)
+            (item) => item.category === "ALPHABET"
           );
           const imbuhan = allData.filter(
             (item) => item.category === "IMBUHAN"
           );
           const angka = allData.filter(
-            (item) => item.category === "ALPHABET" && !isNaN(item.word_text)
+            (item) => item.category === "NUMBERS"
           );
-          
+          const kosakata = allData.filter(
+            (item) => item.category === "KOSAKATA"
+          );
+
           setKamusData({
             abjad,
             imbuhan,
             angka,
+            kosakata,
           });
         }
       } catch (err) {
         console.error("Failed to fetch dictionary data:", err);
         toast.error("Gagal memuat data kamus. Silakan coba lagi nanti.");
-        setKamusData({ abjad: [], imbuhan: [], angka: [] }); // Pastikan state tetap array kosong
+        setKamusData({ abjad: [], imbuhan: [], angka: [], kosakata: [] });
       } finally {
         setLoading(false);
       }
@@ -55,6 +58,7 @@ export default function DictionaryPage() {
     { id: "abjad", label: "Abjad" },
     { id: "imbuhan", label: "Imbuhan" },
     { id: "angka", label: "Angka" },
+    { id: "kosakata", label: "Kosakata" },
   ];
 
   return (

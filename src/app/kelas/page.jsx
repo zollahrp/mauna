@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import api from "@/lib/axios";
 import { Lock, Star } from "lucide-react";
 import toast from "react-hot-toast";
@@ -13,149 +14,214 @@ const LEVEL_COLORS = {
 };
 
 export default function JourneyPage() {
+  const router = useRouter();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [startingId, setStartingId] = useState(null);
 
   useEffect(() => {
+    let cancelled = false;
     const fetchProgress = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
         if (!token) return;
         const res = await api.get("/api/user/soal/user/progress/summary");
-        setData(res.data);
-      } catch (error) {
-        toast.error("Gagal mengambil data progress");
+        if (!cancelled) setData(res.data);
+      } catch {
+        if (!cancelled) {
+          setData(null);
+          toast.error("Gagal mengambil data progress");
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
-    if (typeof window !== "undefined" && localStorage.getItem("token")) {
-      fetchProgress();
-    }
+    fetchProgress();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
+  const levels = useMemo(() => {
+    if (!data?.progress_by_level) return [];
+    return Object.entries(data.progress_by_level);
+  }, [data]);
+
+  function getSublevelId(lvl, idx) {
+    if (Array.isArray(lvl?.sublevels) && lvl.sublevels[idx]?.sublevel_id != null) {
+      return lvl.sublevels[idx].sublevel_id;
+    }
+    if (Array.isArray(lvl?.sublevel_ids) && lvl.sublevel_ids[idx] != null) {
+      return lvl.sublevel_ids[idx];
+    }
+    return idx + 1;
+  }
+
+  async function handleStart(sublevelId) {
+    try {
+      setStartingId(sublevelId);
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      await api.post(`/api/user/soal/sublevel/${sublevelId}/start`, {}, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      router.push(`/kelas/sublevel/${sublevelId}`);
+    } catch (e) {
+      toast.error("Gagal memulai sublevel. Coba lagi.");
+    } finally {
+      setStartingId(null);
+    }
+  }
+
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500">
-        Memuat data level...
-      </div>
-    );
+    return <div className="min-h-[60vh] grid place-items-center text-muted-foreground">Memuat data level...</div>;
   }
 
   if (!data) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500">
-        Tidak ada data level ditemukan.
-      </div>
+      <div className="min-h-[60vh] grid place-items-center text-muted-foreground">Tidak ada data level ditemukan.</div>
     );
   }
 
-  const levels = Object.entries(data.progress_by_level);
-
   return (
-    <div className="p-6 space-y-8 max-w-4xl mx-auto">
-      {/* Level List - Setiap level tampil dengan box hijau dan grid sublevel */}
-      {levels.map(([name, lvl]) => (
-        <div key={lvl.level_id} className="mb-10">
-          {/* Box hijau info level */}
-          <div
-            className="rounded-xl shadow-lg p-6 flex flex-col md:flex-row items-center justify-between mb-4"
-            style={{
-              background: LEVEL_COLORS[name],
-              color: "#fff",
-              opacity: lvl.is_level_unlocked ? 1 : 0.7,
-            }}
-          >
-            <div>
-              <h2 className="text-xl font-bold mb-1">{name}</h2>
-              <p className="text-sm font-semibold opacity-90 mb-2">
-                @{data.username}'{String(data.user_id).slice(-2)}
-              </p>
-              <div className="flex gap-6 text-base font-semibold">
-                <span>
-                  Sublevel: {lvl.completed} / {lvl.total_sublevels}
+    <div className="p-6 space-y-8 max-w-5xl mx-auto">
+      {levels.map(([name, lvl]) => {
+        const bannerColor = LEVEL_COLORS[name] ?? "#eee";
+        const isUnlockedLevel = !!lvl?.is_level_unlocked;
+        const total = Number(lvl?.total_sublevels || 0);
+        const completed = Number(lvl?.completed || 0);
+        const unlocked = Number(lvl?.unlocked || 0);
+        const starsCount = Number(lvl?.total_stars || 0);
+
+        return (
+          <section key={String(lvl?.level_id || name)} aria-labelledby={`level-${name}`} className="mb-12">
+            {/* Level Info Box */}
+            <div
+              className="rounded-2xl shadow-xl p-8 flex flex-col md:flex-row items-center justify-between mb-6"
+              style={{
+                background: bannerColor,
+                color: "#fff",
+                opacity: isUnlockedLevel ? 1 : 0.85,
+              }}
+            >
+              <div>
+                <h2 id={`level-${name}`} className="text-2xl font-bold mb-2">{name}</h2>
+                <div className="flex gap-8 text-lg font-semibold">
+                  <span>
+                    Sublevel: {completed} / {total}
+                  </span>
+                  <span>
+                    Bintang: {starsCount} / {total * 3}
+                  </span>
+                </div>
+              </div>
+              <div className="flex flex-col items-end gap-3 mt-4 md:mt-0">
+                <span className="bg-white/30 px-5 py-2 rounded-xl font-bold text-lg shadow">
+                  {isUnlockedLevel ? (lvl?.is_level_completed ? "Selesai ✔️" : "Belum Selesai") : "Terkunci"}
                 </span>
-                <span>
-                  Bintang: {lvl.total_stars} / {lvl.total_sublevels * 3}
-                </span>
+                <button
+                  type="button"
+                  className="flex items-center gap-2 px-5 py-2 bg-white/30 border border-white/40 rounded-xl font-semibold hover:bg-white/40 transition shadow"
+                >
+                  📘 Buku Panduan
+                </button>
               </div>
             </div>
-            <div className="flex flex-col items-end gap-2">
-              <span className="bg-white/20 px-4 py-2 rounded-lg font-bold text-lg">
-                {lvl.is_level_unlocked
-                  ? lvl.is_level_completed
-                    ? "Selesai ✔️"
-                    : "Belum Selesai"
-                  : "Terkunci"}
-              </span>
-              <button className="flex items-center gap-2 px-4 py-2 bg-white/20 border border-white/30 rounded-lg font-semibold hover:bg-white/30 transition">
-                📘 Buku Panduan
-              </button>
-            </div>
-          </div>
-          {/* Grid sublevel */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 justify-center mb-4">
-            {[...Array(lvl.total_sublevels)].map((_, idx) => {
-              const isUnlocked = lvl.is_level_unlocked && idx < lvl.unlocked;
-              const stars = idx < lvl.completed ? 3 : 0;
-              return (
-                <div
-                  key={idx}
-                  className={`relative flex flex-col items-center justify-center rounded-2xl shadow-md border-2 transition-all duration-200 w-28 h-32
-                    ${isUnlocked
-                      ? "bg-white border-[#ffbb00] cursor-pointer hover:scale-105"
-                      : "bg-white border-gray-300 opacity-80"
-                    }`}
-                  onClick={() =>
-                    isUnlocked &&
-                    toast.success(`Mulai Sublevel ${idx + 1} (${name})`)
-                  }
-                >
-                  <span className="text-xs font-semibold mb-1 text-center text-gray-700">
-                    Sublevel {idx + 1}
-                  </span>
-                  <span className="text-2xl font-bold text-gray-800">{idx + 1}</span>
-                  <div className="flex mt-2 space-x-1">
-                    {[...Array(3)].map((_, i) => (
-                      <Star
-                        key={i}
-                        size={18}
-                        className={i < stars ? "text-[#ffbb00]" : "text-gray-300"}
-                        fill={i < stars ? "#ffbb00" : "none"}
-                      />
-                    ))}
-                  </div>
-                  {!isUnlocked && (
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-2xl z-10">
-                      <Lock size={32} className="text-white" />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      ))}
 
-      {/* Overall Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center text-sm text-gray-700 mt-8">
-        <div className="bg-[#fff8e6] rounded-lg p-3 shadow-sm">
-          <p className="font-semibold text-[#ffbb00]">Sublevel</p>
-          <p>
+            {/* Sublevel Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-8 justify-center px-2 py-2">
+              {Array.from({ length: total }).map((_, idx) => {
+                const isUnlocked = isUnlockedLevel && idx < unlocked;
+                const starsForThis = idx < completed ? 3 : 0;
+                const sublevelId = idx + 1; // ganti jika ada id asli
+                const isStarting = false; // ganti jika ada loading
+
+                return (
+                  <div
+                    key={`${name}-${idx}`}
+                    className={`relative flex flex-col items-center justify-center rounded-2xl shadow-lg border-2 transition-all duration-200 w-28 h-32 bg-white
+                      ${isUnlocked
+                        ? "border-[#ffbb00] cursor-pointer hover:scale-105 hover:shadow-xl"
+                        : "border-gray-300 opacity-70"
+                      }`}
+                    style={{
+                      boxShadow: isUnlocked ? "0 4px 16px rgba(255,187,0,0.08)" : "0 2px 8px rgba(0,0,0,0.04)",
+                    }}
+                    onClick={async () => {
+                      if (isUnlocked) {
+                        try {
+                          setStartingId(sublevelId);
+                          const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+                          const res = await api.get(`/api/user/soal/sublevel/${sublevelId}/start`, {}, {
+                            headers: token ? { Authorization: `Bearer ${token}` } : {},
+                          });
+                          // Simpan data quiz ke localStorage
+                          if (res.data?.data) {
+                            localStorage.setItem("current_quiz", JSON.stringify(res.data.data));
+                            router.push(`/kelas/practice/${sublevelId}`);
+                          } else {
+                            toast.error("Quiz tidak ditemukan.");
+                          }
+                        } catch (e) {
+                          toast.error("Gagal memulai sublevel. Coba lagi.");
+                        } finally {
+                          setStartingId(null);
+                        }
+                      }
+                    }}
+                  >
+                    <span className={`text-xs font-semibold mb-1 text-center ${isUnlocked ? "text-gray-700" : "text-gray-400"}`}>
+                      Sublevel {idx + 1}
+                    </span>
+                    <span className={`text-2xl font-bold ${isUnlocked ? "text-gray-800" : "text-gray-400"}`}>{idx + 1}</span>
+                    <div className="flex mt-2 gap-1">
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <Star
+                          key={i}
+                          size={18}
+                          className={i < starsForThis ? "text-[#ffbb00]" : "text-gray-300"}
+                          fill={i < starsForThis ? "#ffbb00" : "none"}
+                        />
+                      ))}
+                    </div>
+                    {!isUnlocked && (
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center rounded-2xl z-10">
+                        <Lock size={32} className="text-white" />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        );
+      })}
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center text-sm mt-8">
+        <div className="rounded-lg p-3 shadow-sm" style={{ background: "var(--summary-a)" }}>
+          <p className="font-semibold" style={{ color: "var(--level-star)" }}>
+            Sublevel
+          </p>
+          <p className="text-foreground">
             {data.overall_summary.completed_sublevels} / {data.overall_summary.total_sublevels}
           </p>
         </div>
-        <div className="bg-[#f0f9ff] rounded-lg p-3 shadow-sm">
-          <p className="font-semibold text-[#00bfff]">Rata-rata Skor</p>
-          <p>{data.overall_summary.average_score.toFixed(1)}%</p>
+        <div className="rounded-lg p-3 shadow-sm" style={{ background: "var(--summary-b)" }}>
+          <p className="font-semibold" style={{ color: "var(--level-elementary)" }}>
+            Rata-rata Skor
+          </p>
+          <p className="text-foreground">{Number(data.overall_summary.average_score).toFixed(1)}%</p>
         </div>
-        <div className="bg-[#fff8e6] rounded-lg p-3 shadow-sm">
-          <p className="font-semibold text-[#ffbb00]">Total Bintang</p>
-          <p>{data.overall_summary.total_stars}</p>
+        <div className="rounded-lg p-3 shadow-sm" style={{ background: "var(--summary-a)" }}>
+          <p className="font-semibold" style={{ color: "var(--level-star)" }}>
+            Total Bintang
+          </p>
+          <p className="text-foreground">{data.overall_summary.total_stars}</p>
         </div>
-        <div className="bg-[#f0f9ff] rounded-lg p-3 shadow-sm">
-          <p className="font-semibold text-[#00bfff]">Tingkat Selesai</p>
-          <p>{(data.overall_summary.completion_rate * 100).toFixed(1)}%</p>
+        <div className="rounded-lg p-3 shadow-sm" style={{ background: "var(--summary-b)" }}>
+          <p className="font-semibold" style={{ color: "var(--level-elementary)" }}>
+            Tingkat Selesai
+          </p>
+          <p className="text-foreground">{(Number(data.overall_summary.completion_rate) * 100).toFixed(1)}%</p>
         </div>
       </div>
     </div>
