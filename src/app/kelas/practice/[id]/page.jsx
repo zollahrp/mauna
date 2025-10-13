@@ -5,40 +5,79 @@ import QuizKamera from "@/components/quizKamera";
 import toast from "react-hot-toast";
 import api from "@/lib/axios";
 import { useRouter } from "next/navigation";
-// ...existing code...
 
 export default function PracticePage() {
   const [quiz, setQuiz] = useState(null);
-  const [idx, setIdx] = useState(0);
+  const [idx, setIdx] = useState(0); // soal index
+  const [wordIdx, setWordIdx] = useState(0); // index kata pada soal
   const [tries, setTries] = useState(0);
   const [correct, setCorrect] = useState(0);
   const [finished, setFinished] = useState(false);
+  const [loadingWord, setLoadingWord] = useState(true);
+  const [wordProgress, setWordProgress] = useState([]);
   const router = useRouter();
+
   useEffect(() => {
     const quizData = localStorage.getItem("current_quiz");
     if (quizData) setQuiz(JSON.parse(quizData));
   }, []);
 
+  useEffect(() => {
+    // Jeda 1 detik sebelum mulai kata baru
+    setLoadingWord(true);
+    const timer = setTimeout(() => {
+      setLoadingWord(false);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [idx, wordIdx]);
+
+  useEffect(() => {
+    // Reset progress kata saat pindah soal
+    if (quiz) {
+      const question = quiz.questions[idx];
+      const words = question?.dictionary_word?.split(" ") || [];
+      setWordProgress(Array(words.length).fill(false));
+      setWordIdx(0);
+    }
+  }, [idx, quiz]);
+
   const total = quiz?.questions?.length || 0;
   const question = quiz?.questions?.[idx];
+  const words = question?.dictionary_word?.split(" ") || [];
+  const currentWord = words[wordIdx] || "";
 
-  function handleCorrect() {
-    setCorrect((c) => c + 1);
-    setTries(0);
-    if (idx + 1 < total) {
-      setIdx(idx + 1);
+  function handleWordCorrect() {
+    // Tandai kata sudah benar
+    const newProgress = [...wordProgress];
+    newProgress[wordIdx] = true;
+    setWordProgress(newProgress);
+
+    if (wordIdx + 1 < words.length) {
+      setWordIdx(wordIdx + 1);
+      setTries(0);
     } else {
-      setFinished(true);
-    }
-  }
-
-  function handleWrong() {
-    if (tries + 1 >= 3) {
+      // Semua kata sudah benar, lanjut ke soal berikutnya
+      setCorrect((c) => c + 1);
       setTries(0);
       if (idx + 1 < total) {
         setIdx(idx + 1);
       } else {
         setFinished(true);
+      }
+    }
+  }
+
+  function handleWordWrong() {
+    if (tries + 1 >= 3) {
+      setTries(0);
+      if (wordIdx + 1 < words.length) {
+        setWordIdx(wordIdx + 1);
+      } else {
+        if (idx + 1 < total) {
+          setIdx(idx + 1);
+        } else {
+          setFinished(true);
+        }
       }
     } else {
       setTries(tries + 1);
@@ -63,7 +102,6 @@ export default function PracticePage() {
         const res = await api.post(`/api/user/soal/sublevel/${quiz.sublevel_id}/finish`, result, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        console.log("Hasil quiz terkirim:", res.data);
         if (res.status === 200) {
           toast.success("Hasil quiz berhasil dikirim.");
         } else {
@@ -84,7 +122,6 @@ export default function PracticePage() {
     );
   }
 
- 
   if (finished) {
     const result = {
       sublevel_id: quiz.sublevel_id,
@@ -153,20 +190,39 @@ export default function PracticePage() {
         <p className="text-lg text-black font-semibold">{question.question}</p>
         <div className="rounded-lg bg-muted p-3 mb-2">
           <p className="text-sm font-medium text-black">
-            Target: <span className="font-bold">{question.dictionary_word}</span>
+            Target:{" "}
+            <span className="font-bold">
+              {question.dictionary_word}
+            </span>
           </p>
           <p className="text-sm text-muted-foreground text-black">
             {question.dictionary_definition}
           </p>
         </div>
+        <div className="flex justify-center gap-2 mb-4">
+          {words.map((w, i) => (
+            <span
+              key={i}
+              className={`text-xl font-bold px-3 py-2 rounded-lg border
+                ${wordProgress[i] ? "bg-green-200 border-green-400 text-green-700" : i === wordIdx ? "bg-yellow-100 border-yellow-400 text-yellow-700" : "bg-gray-100 border-gray-300 text-gray-400"}
+              `}
+            >
+              {wordProgress[i] ? w : "_".repeat(w.length)}
+            </span>
+          ))}
+        </div>
         <div>
-          <QuizKamera
-            targetWord={question.dictionary_word}
-            predictUrl={api.defaults.baseURL + "/predict"}
-            onFinish={handleCorrect}
-            onWrong={handleWrong}
-            tries={tries}
-          />
+          {loadingWord ? (
+            <div className="text-center text-sm text-muted-foreground py-6">Menyiapkan kata berikutnya...</div>
+          ) : (
+            <QuizKamera
+              targetWord={currentWord}
+              predictUrl={api.defaults.baseURL + "/predict"}
+              onFinish={handleWordCorrect}
+              onWrong={handleWordWrong}
+              tries={tries}
+            />
+          )}
           <p className="mt-2 text-xs text-muted-foreground">
             Percobaan: {tries + 1} / 3
           </p>

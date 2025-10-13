@@ -3,13 +3,29 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-
+import api from "@/lib/axios";
 export default function KelasLayout({ children }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  const [userDailyProgress, setUserDailyProgress] = useState(null);
+
+  const getDailyProgress = async () => {
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      if (!token) return;
+      const res = await api.get("/api/auth/daily-task");
+      if (res.data?.data) {
+        setUserDailyProgress(res.data.data);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     setIsLoggedIn(!!token);
+    getDailyProgress();
   }, []);
 
   return (
@@ -21,9 +37,12 @@ export default function KelasLayout({ children }) {
       <aside className="hidden md:flex w-full md:w-96 md:mr-80 p-6 flex-col gap-6">
         {/* Leaderboard */}
         <div className="rounded-2xl p-6 shadow-md bg-white">
-          <h3 className="font-semibold text-gray-800 mb-3 text-lg">
-            Buka Papan Skor!
-          </h3>
+          <Link href="/kelas/leaderboard" className="flex flex-col items-center">
+            <h3 className="font-semibold text-gray-800 mb-3 text-lg">
+              Buka Papan Skor!
+            </h3>
+          </Link>
+
 
           <div className="flex items-center gap-3">
             <Image
@@ -34,14 +53,26 @@ export default function KelasLayout({ children }) {
               className="flex-shrink-0"
             />
             <p className="text-sm text-gray-600 leading-snug">
-              Selesaikan{" "}
-              <span className="font-semibold text-[#ffbb00]">
-                9 pelajaran lagi
-              </span>{" "}
-              untuk mulai berkompetisi
+              {userDailyProgress?.is_completed ? (
+                <>
+                  <span className="font-semibold text-green-600">Selamat! 🎉</span> <br />
+                  <span className="text-[#00bfff] font-semibold">Ayo terus latihan, puncak leaderboard menantimu!</span>
+                </>
+              ) : (
+                <>
+                  Tinggal{" "}
+                  <span className="font-semibold text-[#ffbb00]">
+                    {userDailyProgress
+                      ? `${Math.max(3 - userDailyProgress.completed_sublevels, 0)} pelajaran lagi`
+                      : "3 pelajaran lagi"}
+                  </span>{" "}
+                  untuk mulai berkompetisi. Semangat, kamu pasti bisa! 💪
+                </>
+              )}
             </p>
           </div>
         </div>
+
 
         {/* Misi Harian */}
         <div className="rounded-2xl p-6 shadow-md bg-white">
@@ -56,9 +87,23 @@ export default function KelasLayout({ children }) {
           </div>
           <p className="text-sm text-gray-600 mb-2">Dapatkan 10 XP</p>
           <div className="w-full h-4 bg-gray-200 rounded-full overflow-hidden">
-            <div className="h-full w-[40%] bg-[#ffbb00]"></div>
+            <div
+              className="h-full bg-[#ffbb00]"
+              style={{
+                width: userDailyProgress
+                  ? `${Math.min((userDailyProgress.completed_sublevels / 3) * 100, 100)}%`
+                  : "0%",
+              }}
+            ></div>
           </div>
-          <p className="text-xs text-gray-500 mt-2">4 / 10</p>
+          <p className="text-xs text-gray-500 mt-2">
+            {userDailyProgress
+              ? `${userDailyProgress.completed_sublevels} / 3`
+              : "0 / 3"}
+            {userDailyProgress?.is_completed && (
+              <span className="ml-2 text-green-600 font-semibold">Selesai!</span>
+            )}
+          </p>
         </div>
 
         {/* Profil / Login */}
