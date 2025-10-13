@@ -5,6 +5,7 @@
 import { useState, useEffect } from "react";
 import api from "@/lib/axios";
 import toast from "react-hot-toast";
+import Link from "next/link";
 
 export default function DictionaryPage() {
   const [activeCategory, setActiveCategory] = useState("abjad");
@@ -68,11 +69,10 @@ export default function DictionaryPage() {
           <button
             key={cat.id}
             onClick={() => setActiveCategory(cat.id)}
-            className={`px-5 py-2 rounded-full font-semibold transition-all duration-200 ${
-              activeCategory === cat.id
+            className={`px-5 py-2 rounded-full font-semibold transition-all duration-200 ${activeCategory === cat.id
                 ? "bg-[#ffbb00] text-white shadow-md"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
+              }`}
           >
             {cat.label}
           </button>
@@ -96,23 +96,24 @@ export default function DictionaryPage() {
             </div>
           ) : (
             kamusData[activeCategory].map((item) => (
-              <div
-                key={item.id}
-                className="border border-[#ffbb00]/40 rounded-xl p-4 hover:shadow-md transition duration-200"
-              >
-                <p className="font-bold text-gray-800">{item.word_text}</p>
-                <p className="text-gray-600 text-sm mt-1">{item.definition}</p>
-                {item.video_url && (
-                  <a
-                    href={item.video_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-blue-500 underline mt-2 inline-block"
-                  >
-                    Lihat Video
-                  </a>
-                )}
-              </div>
+              <Link href={`/kelas/dictionary/${item.id}`} key={item.id}>
+                <div className="border border-[#ffbb00]/40 rounded-xl p-4 hover:shadow-md transition duration-200">
+                  <p className="font-bold text-gray-800">{item.word_text}</p>
+                  <p className="text-gray-600 text-sm mt-1">{item.definition}</p>
+                  {item.video_url && (
+                    <button
+                      type="button"
+                      onClick={e => {
+                        e.stopPropagation();
+                        window.open(item.video_url, "_blank", "noopener,noreferrer");
+                      }}
+                      className="text-xs text-blue-500 underline mt-2 inline-block bg-transparent border-none p-0 cursor-pointer"
+                    >
+                      Lihat Video
+                    </button>
+                  )}
+                </div>
+              </Link>
             ))
           )}
         </div>

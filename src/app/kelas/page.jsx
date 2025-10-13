@@ -47,31 +47,6 @@ export default function JourneyPage() {
     return Object.entries(data.progress_by_level);
   }, [data]);
 
-  function getSublevelId(lvl, idx) {
-    if (Array.isArray(lvl?.sublevels) && lvl.sublevels[idx]?.sublevel_id != null) {
-      return lvl.sublevels[idx].sublevel_id;
-    }
-    if (Array.isArray(lvl?.sublevel_ids) && lvl.sublevel_ids[idx] != null) {
-      return lvl.sublevel_ids[idx];
-    }
-    return idx + 1;
-  }
-
-  async function handleStart(sublevelId) {
-    try {
-      setStartingId(sublevelId);
-      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-      await api.post(`/api/user/soal/sublevel/${sublevelId}/start`, {}, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      router.push(`/kelas/sublevel/${sublevelId}`);
-    } catch (e) {
-      toast.error("Gagal memulai sublevel. Coba lagi.");
-    } finally {
-      setStartingId(null);
-    }
-  }
-
   if (loading) {
     return <div className="min-h-[60vh] grid place-items-center text-muted-foreground">Memuat data level...</div>;
   }
@@ -89,7 +64,6 @@ export default function JourneyPage() {
         const isUnlockedLevel = !!lvl?.is_level_unlocked;
         const total = Number(lvl?.total_sublevels || 0);
         const completed = Number(lvl?.completed || 0);
-        const unlocked = Number(lvl?.unlocked || 0);
         const starsCount = Number(lvl?.total_stars || 0);
 
         return (
@@ -118,26 +92,16 @@ export default function JourneyPage() {
                 <span className="bg-white/30 px-5 py-2 rounded-xl font-bold text-lg shadow">
                   {isUnlockedLevel ? (lvl?.is_level_completed ? "Selesai ✔️" : "Belum Selesai") : "Terkunci"}
                 </span>
-                <button
-                  type="button"
-                  className="flex items-center gap-2 px-5 py-2 bg-white/30 border border-white/40 rounded-xl font-semibold hover:bg-white/40 transition shadow"
-                >
-                  📘 Buku Panduan
-                </button>
               </div>
             </div>
 
             {/* Sublevel Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-8 justify-center px-2 py-2">
-              {Array.from({ length: total }).map((_, idx) => {
-                const isUnlocked = isUnlockedLevel && idx < unlocked;
-                const starsForThis = idx < completed ? 3 : 0;
-                const sublevelId = idx + 1; // ganti jika ada id asli
-                const isStarting = false; // ganti jika ada loading
-
+              {lvl.sublevels.map((sub, idx) => {
+                const isUnlocked = sub.is_unlocked;
                 return (
                   <div
-                    key={`${name}-${idx}`}
+                    key={sub.sublevel_id}
                     className={`relative flex flex-col items-center justify-center rounded-2xl shadow-lg border-2 transition-all duration-200 w-28 h-32 bg-white
                       ${isUnlocked
                         ? "border-[#ffbb00] cursor-pointer hover:scale-105 hover:shadow-xl"
@@ -149,15 +113,14 @@ export default function JourneyPage() {
                     onClick={async () => {
                       if (isUnlocked) {
                         try {
-                          setStartingId(sublevelId);
+                          setStartingId(sub.sublevel_id);
                           const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-                          const res = await api.get(`/api/user/soal/sublevel/${sublevelId}/start`, {}, {
+                          const res = await api.get(`/api/user/soal/sublevel/${sub.sublevel_id}/start`, {}, {
                             headers: token ? { Authorization: `Bearer ${token}` } : {},
                           });
-                          // Simpan data quiz ke localStorage
                           if (res.data?.data) {
                             localStorage.setItem("current_quiz", JSON.stringify(res.data.data));
-                            router.push(`/kelas/practice/${sublevelId}`);
+                            router.push(`/kelas/practice/${sub.sublevel_id}`);
                           } else {
                             toast.error("Quiz tidak ditemukan.");
                           }
@@ -170,16 +133,16 @@ export default function JourneyPage() {
                     }}
                   >
                     <span className={`text-xs font-semibold mb-1 text-center ${isUnlocked ? "text-gray-700" : "text-gray-400"}`}>
-                      Sublevel {idx + 1}
+                      {sub.sublevel_name}
                     </span>
-                    <span className={`text-2xl font-bold ${isUnlocked ? "text-gray-800" : "text-gray-400"}`}>{idx + 1}</span>
+                    <span className={`text-2xl font-bold ${isUnlocked ? "text-gray-800" : "text-gray-400"}`}>{sub.sublevel_id}</span>
                     <div className="flex mt-2 gap-1">
                       {Array.from({ length: 3 }).map((_, i) => (
                         <Star
                           key={i}
                           size={18}
-                          className={i < starsForThis ? "text-[#ffbb00]" : "text-gray-300"}
-                          fill={i < starsForThis ? "#ffbb00" : "none"}
+                          className={i < sub.stars ? "text-[#ffbb00]" : "text-gray-300"}
+                          fill={i < sub.stars ? "#ffbb00" : "none"}
                         />
                       ))}
                     </div>
@@ -196,6 +159,7 @@ export default function JourneyPage() {
         );
       })}
 
+      {/* Summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center text-sm mt-8">
         <div className="rounded-lg p-3 shadow-sm" style={{ background: "var(--summary-a)" }}>
           <p className="font-semibold" style={{ color: "var(--level-star)" }}>
@@ -221,7 +185,7 @@ export default function JourneyPage() {
           <p className="font-semibold" style={{ color: "var(--level-elementary)" }}>
             Tingkat Selesai
           </p>
-          <p className="text-foreground">{(Number(data.overall_summary.completion_rate) * 100).toFixed(1)}%</p>
+          <p className="text-foreground">{Number(data.overall_summary.completion_rate).toFixed(1)}%</p>
         </div>
       </div>
     </div>

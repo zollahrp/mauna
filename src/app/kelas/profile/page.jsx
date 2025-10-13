@@ -10,6 +10,8 @@ import api from "@/lib/axios";
 import toast from "react-hot-toast";
 import AvatarUploader from "@/components/AvatarUploader";
 
+import { Award } from "lucide-react"; // Tambahkan icon badge
+
 export default function ProfilePage() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -19,6 +21,8 @@ export default function ProfilePage() {
   const [avatarFile, setAvatarFile] = useState(null); // State baru untuk file avatar
   const router = useRouter();
   const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [userBadges, setUserBadges] = useState([]);
+  const [badgesLoading, setBadgesLoading] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -38,6 +42,7 @@ export default function ProfilePage() {
     const fetchProfile = async () => {
       try {
         const res = await api.get("/api/auth/profile");
+        console.log('data profile', res.data);
         if (res.data?.data) {
           setUser(res.data.data);
           localStorage.setItem(
@@ -101,7 +106,24 @@ export default function ProfilePage() {
   const handleAvatarModalClose = () => {
     setShowAvatarModal(false);
   };
-
+  // Ambil badge user dari /api/badges/my-badges
+  useEffect(() => {
+    const fetchUserBadges = async () => {
+      try {
+        const res = await api.get("/api/badges/my-badges");
+        if (res.data && Array.isArray(res.data.badges)) {
+          setUserBadges(res.data.badges);
+        } else {
+          setUserBadges([]);
+        }
+      } catch {
+        setUserBadges([]);
+      } finally {
+        setBadgesLoading(false);
+      }
+    };
+    fetchUserBadges();
+  }, []);
   const validateForm = () => {
     const errors = [];
 
@@ -268,8 +290,8 @@ export default function ProfilePage() {
                 avatarFile
                   ? URL.createObjectURL(avatarFile)
                   : user.avatar_url
-                  ? `${process.env.NEXT_PUBLIC_API_URL}${user.avatar_url}`
-                  : "/images/avatar_default.jpg"
+                    ? `${process.env.NEXT_PUBLIC_API_URL}${user.avatar_url}`
+                    : "/images/avatar_default.jpg"
               }
               alt="Foto Profil"
               fill
@@ -372,7 +394,48 @@ export default function ProfilePage() {
               : "Belum ada bio. Ceritakan sedikit tentang dirimu di sini!"}
           </p>
         </div>
-
+        {/* BADGES USER */}
+        <div className="bg-white rounded-2xl border border-[#ffbb00]/40 p-6 mb-8 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <Award className="text-[#ffbb00]" size={20} />
+            <h2 className="font-semibold text-gray-800">Badge Kamu</h2>
+          </div>
+          {badgesLoading ? (
+            <div className="text-gray-400 text-center py-6">Memuat badge...</div>
+          ) : userBadges.length === 0 ? (
+            <div className="text-gray-400 text-center py-6">Belum punya badge.</div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {userBadges.map((badge) => (
+                <div
+                  key={badge.badge_id}
+                  className={`border rounded-xl p-4 flex flex-col items-center gap-2 shadow hover:scale-105 transition-transform duration-200 cursor-pointer ${badge.level === "EASY"
+                      ? "bg-green-100 text-green-700 border-green-300"
+                      : badge.level === "MEDIUM"
+                        ? "bg-yellow-100 text-yellow-700 border-yellow-300"
+                        : "bg-red-100 text-red-700 border-red-300"
+                    }`}
+                  title={badge.nama}
+                >
+                  <div className="text-4xl mb-1">🏅</div>
+                  <div className="font-bold text-base">{badge.nama}</div>
+                  <div className="text-xs text-gray-600 text-center">
+                    {badge.earned_at
+                      ? `Didapatkan: ${new Date(badge.earned_at).toLocaleDateString("id-ID", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })}`
+                      : ""}
+                  </div>
+                  <span className="mt-2 px-2 py-0.5 rounded-full text-xs font-semibold border">
+                    {badge.level.charAt(0).toUpperCase() + badge.level.slice(1).toLowerCase()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
         {/* Status Info */}
         <div className="bg-white rounded-2xl border border-[#ffbb00]/40 p-6 mb-6 shadow-sm">
           <h2 className="font-semibold text-gray-800 mb-4">Status Akun</h2>

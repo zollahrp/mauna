@@ -6,82 +6,77 @@ import toast from "react-hot-toast";
 import api from "@/lib/axios";
 import { useRouter } from "next/navigation";
 
+// Helper untuk random dictionary selain yang benar
+function getRandomOptions(dictionaryList, correctId, count = 3) {
+  const filtered = dictionaryList.filter((d) => d.id !== correctId);
+  const shuffled = filtered.sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, count);
+}
+
 export default function PracticePage() {
   const [quiz, setQuiz] = useState(null);
-  const [idx, setIdx] = useState(0); // soal index
-  const [wordIdx, setWordIdx] = useState(0); // index kata pada soal
+  const [dictionaryList, setDictionaryList] = useState([]);
+  const [idx, setIdx] = useState(0);
   const [tries, setTries] = useState(0);
   const [correct, setCorrect] = useState(0);
   const [finished, setFinished] = useState(false);
-  const [loadingWord, setLoadingWord] = useState(true);
-  const [wordProgress, setWordProgress] = useState([]);
   const router = useRouter();
 
   useEffect(() => {
     const quizData = localStorage.getItem("current_quiz");
-    if (quizData) setQuiz(JSON.parse(quizData));
-  }, []);
-
-  useEffect(() => {
-    // Jeda 1 detik sebelum mulai kata baru
-    setLoadingWord(true);
-    const timer = setTimeout(() => {
-      setLoadingWord(false);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, [idx, wordIdx]);
-
-  useEffect(() => {
-    // Reset progress kata saat pindah soal
-    if (quiz) {
-      const question = quiz.questions[idx];
-      const words = question?.dictionary_word?.split(" ") || [];
-      setWordProgress(Array(words.length).fill(false));
-      setWordIdx(0);
+    if (quizData) {
+      const parsed = JSON.parse(quizData);
+      setQuiz(parsed); // BENAR
     }
-  }, [idx, quiz]);
+    // Ambil semua dictionary untuk opsi
+    async function fetchDictionary() {
+      try {
+        const res = await api.get("/public/kamus");
+        if (res.data?.success && Array.isArray(res.data.data)) {
+          setDictionaryList(res.data.data);
+        }
+      } catch { }
+    }
+    fetchDictionary();
+  }, []);
 
   const total = quiz?.questions?.length || 0;
   const question = quiz?.questions?.[idx];
-  const words = question?.dictionary_word?.split(" ") || [];
-  const currentWord = words[wordIdx] || "";
 
-  function handleWordCorrect() {
-    // Tandai kata sudah benar
-    const newProgress = [...wordProgress];
-    newProgress[wordIdx] = true;
-    setWordProgress(newProgress);
+  // Untuk PILIH_GAMBAR
+  const gambarOptions = question?.tipe_soal === "PILIH_GAMBAR"
+    ? (() => {
+      if (!dictionaryList.length || !question) return [];
+      const correctDict = dictionaryList.find(d => d.id === question.dictionary_id);
+      const randomDicts = getRandomOptions(dictionaryList, question.dictionary_id, 3);
+      const options = [...randomDicts, correctDict].filter(Boolean);
+      return options.sort(() => 0.5 - Math.random());
+    })()
+    : [];
 
-    if (wordIdx + 1 < words.length) {
-      setWordIdx(wordIdx + 1);
-      setTries(0);
-    } else {
-      // Semua kata sudah benar, lanjut ke soal berikutnya
+  // Untuk TEBAK_GAMBAR
+  const kataOptions = question?.tipe_soal === "TEBAK_GAMBAR"
+    ? (() => {
+      if (!dictionaryList.length || !question) return [];
+      const correctDict = dictionaryList.find(d => d.id === question.dictionary_id);
+      const randomDicts = getRandomOptions(dictionaryList, question.dictionary_id, 3);
+      const options = [...randomDicts, correctDict].filter(Boolean);
+      return options.sort(() => 0.5 - Math.random());
+    })()
+    : [];
+
+  function handleAnswer(isCorrect) {
+    if (isCorrect) {
       setCorrect((c) => c + 1);
-      setTries(0);
-      if (idx + 1 < total) {
-        setIdx(idx + 1);
-      } else {
-        setFinished(true);
-      }
-    }
-  }
-
-  function handleWordWrong() {
-    if (tries + 1 >= 3) {
-      setTries(0);
-      if (wordIdx + 1 < words.length) {
-        setWordIdx(wordIdx + 1);
-      } else {
-        if (idx + 1 < total) {
-          setIdx(idx + 1);
-        } else {
-          setFinished(true);
-        }
-      }
+      toast.success("Jawaban benar!");
     } else {
-      setTries(tries + 1);
-      toast.error(`Percobaan ke-${tries + 1} salah. Maksimal 3x percobaan.`);
+      toast.error("Jawaban salah!");
+    }
+    if (idx + 1 < total) {
+      setIdx(idx + 1);
+      setTries(0);
+    } else {
+      setFinished(true);
     }
   }
 
@@ -94,22 +89,15 @@ export default function PracticePage() {
           return;
         }
         const result = {
-          sublevel_id: quiz.sublevel_id,
+          sublevel_id: quiz?.sublevel_id,
           correct_answers: correct,
           total_score: correct * 10,
           total_questions: total,
         };
-        const res = await api.post(`/api/user/soal/sublevel/${quiz.sublevel_id}/finish`, result, {
+        await api.post(`/api/user/soal/sublevel/${quiz?.sublevel_id}/finish`, result, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (res.status === 200) {
-          toast.success("Hasil quiz berhasil dikirim.");
-        } else {
-          toast.error("Gagal mengirim hasil quiz.");
-        }
-      } catch {
-        toast.error("Terjadi kesalahan. Silakan coba lagi.");
-      }
+      } catch { }
     }
     if (finished && quiz) kirimHasil();
   }, [finished, quiz, correct, total]);
@@ -122,11 +110,13 @@ export default function PracticePage() {
     );
   }
 
+ 
   if (finished) {
+    const safeCorrect = Math.min(correct, total);
     const result = {
-      sublevel_id: quiz.sublevel_id,
-      correct_answers: correct,
-      total_score: correct * 10,
+      sublevel_id: quiz?.sublevel_id,
+      correct_answers: safeCorrect,
+      total_score: safeCorrect * 10,
       total_questions: total,
     };
 
@@ -137,18 +127,12 @@ export default function PracticePage() {
           toast.error("Anda harus login terlebih dahulu.");
           return;
         }
-        const res = await api.post(`/api/user/soal/sublevel/${quiz.sublevel_id}/finish`, result, {
+        await api.post(`/api/user/soal/sublevel/${quiz?.sublevel_id}/finish`, result, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (res.status === 200) {
-          toast.success("Hasil quiz berhasil dikirim.");
-          router.push("/kelas");
-        } else {
-          toast.error("Gagal mengirim hasil quiz.");
-        }
+        router.push("/kelas");
       } catch (error) {
         toast.error("Terjadi kesalahan. Silakan coba lagi.");
-        console.error(error);
       }
     }
 
@@ -190,50 +174,67 @@ export default function PracticePage() {
         <p className="text-lg text-black font-semibold">{question.question}</p>
         <div className="rounded-lg bg-muted p-3 mb-2">
           <p className="text-sm font-medium text-black">
-            Target:{" "}
-            <span className="font-bold">
-              {question.dictionary_word}
-            </span>
+            Target: <span className="font-bold">{question.dictionary_word}</span>
           </p>
           <p className="text-sm text-muted-foreground text-black">
             {question.dictionary_definition}
           </p>
         </div>
-        <div className="flex justify-center gap-2 mb-4">
-          {words.map((w, i) => (
-            <span
-              key={i}
-              className={`text-xl font-bold px-3 py-2 rounded-lg border
-                ${wordProgress[i] ? "bg-green-200 border-green-400 text-green-700" : i === wordIdx ? "bg-yellow-100 border-yellow-400 text-yellow-700" : "bg-gray-100 border-gray-300 text-gray-400"}
-              `}
-            >
-              {wordProgress[i] ? w : "_".repeat(w.length)}
-            </span>
-          ))}
-        </div>
-        <div>
-          {loadingWord ? (
-            <div className="text-center text-sm text-muted-foreground py-6">Menyiapkan kata berikutnya...</div>
-          ) : (
-            <QuizKamera
-              targetWord={currentWord}
-              predictUrl={api.defaults.baseURL + "/predict"}
-              onFinish={handleWordCorrect}
-              onWrong={handleWordWrong}
-              tries={tries}
-            />
-          )}
-          <p className="mt-2 text-xs text-muted-foreground">
-            Percobaan: {tries + 1} / 3
-          </p>
-          <button
-            type="button"
-            className="mt-4 px-5 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold shadow transition"
-            onClick={() => setFinished(true)}
-          >
-            Finish Quiz
-          </button>
-        </div>
+
+        {/* PILIH_GAMBAR */}
+        {question.tipe_soal === "PILIH_GAMBAR" && (
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            {gambarOptions.map((dict) => (
+              <button
+                key={dict.id}
+                className="border rounded-lg overflow-hidden hover:shadow-lg transition"
+                onClick={() => handleAnswer(dict.id === question.dictionary_id)}
+              >
+                <img
+                  src={dict.image_url_ref || "/images/default.jpg"}
+                  alt={dict.word_text}
+                  className="w-full h-32 object-cover"
+                />
+                <div className="p-2 text-center font-semibold">{dict.word_text}</div>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* TEBAK_GAMBAR */}
+        {question.tipe_soal === "TEBAK_GAMBAR" && (
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            {kataOptions.map((dict) => (
+              <button
+                key={dict.id}
+                className="border rounded-lg p-4 text-lg font-bold hover:bg-green-50 transition"
+                onClick={() => handleAnswer(dict.id === question.dictionary_id)}
+              >
+                {dict.word_text}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* OPEN_CAMERA */}
+        {question.tipe_soal === "OPEN_CAMERA" && (
+          <QuizKamera
+            targetWord={question.dictionary_word}
+            predictUrl={api.defaults.baseURL + "/predict"}
+            onFinish={() => handleAnswer(true)}
+            onWrong={() => handleAnswer(false)}
+            tries={tries}
+          />
+        )}
+
+        {/* Tombol Finish Quiz manual */}
+        <button
+          type="button"
+          className="mt-6 px-5 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold shadow transition w-full"
+          onClick={() => setFinished(true)}
+        >
+          Finish Quiz
+        </button>
       </div>
     </section>
   );
