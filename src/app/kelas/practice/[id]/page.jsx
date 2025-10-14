@@ -33,7 +33,7 @@ export default function PracticePage() {
         if (res.data?.success && Array.isArray(res.data.data)) {
           setDictionaryList(res.data.data);
         }
-      } catch { }
+      } catch {}
     }
     fetchDictionary();
   }, []);
@@ -44,23 +44,23 @@ export default function PracticePage() {
   // Untuk PILIH_GAMBAR
   const gambarOptions = question?.tipe_soal === "PILIH_GAMBAR"
     ? (() => {
-      if (!dictionaryList.length || !question) return [];
-      const correctDict = dictionaryList.find(d => d.id === question.dictionary_id);
-      const randomDicts = getRandomOptions(dictionaryList, question.dictionary_id, 3);
-      const options = [...randomDicts, correctDict].filter(Boolean);
-      return options.sort(() => 0.5 - Math.random());
-    })()
+        if (!dictionaryList.length || !question) return [];
+        const correctDict = dictionaryList.find(d => d.id === question.dictionary_id);
+        const randomDicts = getRandomOptions(dictionaryList, question.dictionary_id, 3);
+        const options = [...randomDicts, correctDict].filter(Boolean);
+        return options.sort(() => 0.5 - Math.random());
+      })()
     : [];
 
   // Untuk TEBAK_GAMBAR
   const kataOptions = question?.tipe_soal === "TEBAK_GAMBAR"
     ? (() => {
-      if (!dictionaryList.length || !question) return [];
-      const correctDict = dictionaryList.find(d => d.id === question.dictionary_id);
-      const randomDicts = getRandomOptions(dictionaryList, question.dictionary_id, 3);
-      const options = [...randomDicts, correctDict].filter(Boolean);
-      return options.sort(() => 0.5 - Math.random());
-    })()
+        if (!dictionaryList.length || !question) return [];
+        const correctDict = dictionaryList.find(d => d.id === question.dictionary_id);
+        const randomDicts = getRandomOptions(dictionaryList, question.dictionary_id, 3);
+        const options = [...randomDicts, correctDict].filter(Boolean);
+        return options.sort(() => 0.5 - Math.random());
+      })()
     : [];
 
   function handleAnswer(isCorrect) {
@@ -89,7 +89,7 @@ export default function PracticePage() {
         await api.post(`/api/user/soal/sublevel/${quiz?.sublevel_id}/finish`, result, {
           headers: { Authorization: `Bearer ${token}` },
         });
-      } catch { }
+      } catch {}
     }
     if (finished && quiz) kirimHasil();
   }, [finished, quiz, correct, total]);
@@ -119,7 +119,7 @@ export default function PracticePage() {
           headers: { Authorization: `Bearer ${token}` },
         });
         router.push("/kelas");
-      } catch { }
+      } catch {}
     }
 
     return (
@@ -130,9 +130,6 @@ export default function PracticePage() {
             <div>Benar: {result.correct_answers} / {result.total_questions}</div>
             <div>Score: {result.total_score}</div>
           </div>
-          {/* <pre className="bg-gray-100 text-black rounded p-4 mt-4 text-left text-xs">
-            {JSON.stringify(result, null, 2)}
-          </pre> */}
           <button
             type="button"
             className="mt-4 px-5 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold shadow transition"
@@ -143,6 +140,14 @@ export default function PracticePage() {
         </div>
       </div>
     );
+  }
+
+  // Ambil gambar untuk soal TEBAK_GAMBAR
+  let tebakGambarUrl = "";
+  if (question?.tipe_soal === "TEBAK_GAMBAR" && dictionaryList.length) {
+    const dict = dictionaryList.find(d => d.id === question.dictionary_id);
+    tebakGambarUrl = dict?.image_url_ref || "/images/default.jpg";
+    console.log("Gambar TEBAK_GAMBAR:", tebakGambarUrl);
   }
 
   return (
@@ -158,6 +163,16 @@ export default function PracticePage() {
       </div>
       <div className="bg-white rounded-xl border shadow-sm p-6 space-y-4">
         <p className="text-lg text-black font-semibold">{question.question}</p>
+        {/* Tampilkan gambar di soal TEBAK_GAMBAR */}
+        {question.tipe_soal === "TEBAK_GAMBAR" && (
+          <div className="flex justify-center mb-4">
+            <img
+              src={`http://${tebakGambarUrl}`}
+              alt="Gambar soal"
+              className="rounded-lg border w-48 h-48 object-cover bg-gray-100"
+            />
+          </div>
+        )}
         <div className="rounded-lg bg-muted p-3 mb-2">
           <p className="text-sm font-medium text-black">
             Target: <span className="font-bold">{question.dictionary_word}</span>
@@ -169,7 +184,7 @@ export default function PracticePage() {
 
         {/* PILIH_GAMBAR */}
         {question.tipe_soal === "PILIH_GAMBAR" && (
-          <div className="grid grid-cols-2   text-black gap-4 mt-4">
+          <div className="grid grid-cols-2 text-black gap-4 mt-4">
             {gambarOptions.map((dict) => (
               <button
                 key={dict.id}
@@ -177,7 +192,7 @@ export default function PracticePage() {
                 onClick={() => handleAnswer(dict.id === question.dictionary_id)}
               >
                 <img
-                  src={dict.image_url_ref || "/images/default.jpg"}
+                  src={`http://${dict.image_url_ref || "/images/default.jpg"}`}
                   alt={dict.word_text}
                   className="w-full h-32 object-cover"
                 />
@@ -210,7 +225,7 @@ export default function PracticePage() {
             onFinish={() => handleAnswer(true)}
             onWrong={() => handleAnswer(false)}
             tries={tries}
-            showToast={false} // pastikan komponen QuizKamera tidak menampilkan toast
+            showToast={false}
           />
         )}
 
