@@ -27,6 +27,7 @@ function LottieWithVisibility({ src, loop, autoplay, className, ...props }) {
 
   React.useEffect(() => {
     let isIntersecting = false;
+    const node = containerRef.current; // simpan referensi node
 
     function handleTabVisibility() {
       if (isIntersecting && document.visibilityState === "visible") {
@@ -46,11 +47,11 @@ function LottieWithVisibility({ src, loop, autoplay, className, ...props }) {
       { threshold: 0.2 }
     );
 
-    if (containerRef.current) observer.observe(containerRef.current);
+    if (node) observer.observe(node);
 
     return () => {
       document.removeEventListener("visibilitychange", handleTabVisibility);
-      if (containerRef.current) observer.unobserve(containerRef.current);
+      if (node) observer.unobserve(node); // gunakan node, bukan containerRef.current
       observer.disconnect();
     };
   }, []);
@@ -116,9 +117,8 @@ function ScrollLottie({ className, animationData }) {
 function FeatureSection({ title, desc, lottieUrl, reverse }) {
   return (
     <div
-      className={`container mx-auto max-w-screen-lg bg-[#FAFAFA] flex flex-col md:flex-row items-center py-14 gap-0 ${
-        reverse ? "md:flex-row-reverse" : ""
-      }`}
+      className={`container mx-auto max-w-screen-lg bg-[#FAFAFA] flex flex-col md:flex-row items-center py-14 gap-0 ${reverse ? "md:flex-row-reverse" : ""
+        }`}
     >
       {/* Kolom 1 - Lottie */}
       <div className="flex justify-center md:w-1/2">
@@ -171,7 +171,7 @@ export default function Home() {
                 type="button"
                 onClick={() => router.push("/auth/register")}
                 className="w-full bg-[#ffbb00] hover:bg-[#e6a800] text-white font-semibold py-3 rounded-2xl shadow-[0_3px_0_#b45309] transition active:translate-y-0.5 cursor-pointer"
-              > 
+              >
                 MULAI
               </button>
 
