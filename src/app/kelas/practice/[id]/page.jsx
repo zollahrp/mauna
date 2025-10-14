@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import QuizKamera from "@/components/quizKamera";
-import toast from "react-hot-toast";
 import api from "@/lib/axios";
 import { useRouter } from "next/navigation";
 
@@ -26,9 +25,8 @@ export default function PracticePage() {
     const quizData = localStorage.getItem("current_quiz");
     if (quizData) {
       const parsed = JSON.parse(quizData);
-      setQuiz(parsed); // BENAR
+      setQuiz(parsed);
     }
-    // Ambil semua dictionary untuk opsi
     async function fetchDictionary() {
       try {
         const res = await api.get("/public/kamus");
@@ -68,9 +66,6 @@ export default function PracticePage() {
   function handleAnswer(isCorrect) {
     if (isCorrect) {
       setCorrect((c) => c + 1);
-      toast.success("Jawaban benar!");
-    } else {
-      toast.error("Jawaban salah!");
     }
     if (idx + 1 < total) {
       setIdx(idx + 1);
@@ -84,10 +79,7 @@ export default function PracticePage() {
     async function kirimHasil() {
       try {
         const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-        if (!token) {
-          toast.error("Anda harus login terlebih dahulu.");
-          return;
-        }
+        if (!token) return;
         const result = {
           sublevel_id: quiz?.sublevel_id,
           correct_answers: correct,
@@ -110,7 +102,6 @@ export default function PracticePage() {
     );
   }
 
- 
   if (finished) {
     const safeCorrect = Math.min(correct, total);
     const result = {
@@ -123,17 +114,12 @@ export default function PracticePage() {
     async function handleFinishQuiz() {
       try {
         const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-        if (!token) {
-          toast.error("Anda harus login terlebih dahulu.");
-          return;
-        }
+        if (!token) return;
         await api.post(`/api/user/soal/sublevel/${quiz?.sublevel_id}/finish`, result, {
           headers: { Authorization: `Bearer ${token}` },
         });
         router.push("/kelas");
-      } catch (error) {
-        toast.error("Terjadi kesalahan. Silakan coba lagi.");
-      }
+      } catch { }
     }
 
     return (
@@ -144,9 +130,9 @@ export default function PracticePage() {
             <div>Benar: {result.correct_answers} / {result.total_questions}</div>
             <div>Score: {result.total_score}</div>
           </div>
-          <pre className="bg-gray-100 text-black rounded p-4 mt-4 text-left text-xs">
+          {/* <pre className="bg-gray-100 text-black rounded p-4 mt-4 text-left text-xs">
             {JSON.stringify(result, null, 2)}
-          </pre>
+          </pre> */}
           <button
             type="button"
             className="mt-4 px-5 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold shadow transition"
@@ -224,6 +210,7 @@ export default function PracticePage() {
             onFinish={() => handleAnswer(true)}
             onWrong={() => handleAnswer(false)}
             tries={tries}
+            showToast={false} // pastikan komponen QuizKamera tidak menampilkan toast
           />
         )}
 

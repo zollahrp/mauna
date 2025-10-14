@@ -30,7 +30,7 @@ const mobileMainMenu = [
 // Menu panel "Lainnya" versi mobile
 const mobileLainnyaMenu = [
   { name: "Profil", icon: "/icons/profile.png", href: "/kelas/profile" },
-  { name: "Toko", icon: "/icons/toko.png", href: "/kelas/settings" },
+  { name: "Toko", icon: "/icons/toko.png", href: "/kelas/toko" },
   { name: "Lencana", icon: "/icons/medali.png", href: "/kelas/badges" },
   { name: "Keluar", icon: "/icons/logout.png", action: "logout" },
 ];

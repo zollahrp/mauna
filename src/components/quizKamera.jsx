@@ -8,6 +8,7 @@ export default function QuizKamera({
   onFinish, // () => void
   onWrong,  // () => void
   tries = 0,
+  showToast = true, // default true, bisa diatur dari parent
 }) {
   const [cameraOn, setCameraOn] = useState(true)
   const [message, setMessage] = useState("")
@@ -64,14 +65,19 @@ export default function QuizKamera({
         const target = String(targetWord).toUpperCase()
 
         if (predicted === target) {
-          setMessage(`Jawaban benar: ${predicted}`)
+          if (showToast) setMessage(`Jawaban benar: ${predicted}`)
+          else setMessage("")
           if (typeof onFinish === "function") onFinish()
         } else if (predicted) {
-          setMessage(`Prediksi: ${predicted} (belum sesuai)`)
+          if (showToast) setMessage(`Prediksi: ${predicted} (belum sesuai)`)
+          else setMessage("")
           if (typeof onWrong === "function") onWrong()
         }
       } catch (err) {
-        setError("Gagal mengirim ke server.")
+        // Tidak tampilkan error ke user jika showToast=false
+        if (showToast) setError("Gagal mengirim ke server.")
+        else setError(null)
+        console.error(err)
       }
     }, "image/jpeg")
   }
@@ -94,8 +100,8 @@ export default function QuizKamera({
         className="rounded-lg border border-gray-400 shadow-md bg-black"
       />
       <canvas ref={canvasRef} width={400} height={300} className="hidden" />
-      {error && <p className="text-red-600">{error}</p>}
-      {message && <p className="text-black">{message}</p>}
+      {error && showToast && <p className="text-red-600">{error}</p>}
+      {message && showToast && <p className="text-black">{message}</p>}
     </div>
   )
 }

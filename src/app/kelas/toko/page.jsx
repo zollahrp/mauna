@@ -46,8 +46,6 @@ export default function TokoPage() {
                 setMessage({ type: "success", text: "Berhasil membeli item!" });
                 setXp((prev) => prev - xpCost);
             }
-            //     setMessage({ type: "error", text: res.data?.message || "Gagal membeli item." });
-            //   }
         } catch (error) {
             setMessage({ type: "error", text: error.message || "Gagal membeli item." });
         }
@@ -55,21 +53,21 @@ export default function TokoPage() {
     };
 
     return (
-        <div className="max-w-3xl mx-auto text-black py-8 px-4">
-            <div className="flex items-center justify-between mb-8">
-                <h1 className="text-3xl font-bold">Toko</h1>
+        <div className="max-w-3xl mx-auto text-black py-8 px-2 sm:px-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
+                <h1 className="text-2xl sm:text-3xl font-bold">Toko</h1>
                 <div className="flex items-center gap-2">
-                    <span className="text-lg font-semibold">XP Kamu:</span>
+                    <span className="text-base sm:text-lg font-semibold">XP Kamu:</span>
                     {profileLoading ? (
                         <span className="text-gray-400">Memuat...</span>
                     ) : (
-                        <span className="text-[#ffbb00] font-bold text-xl">🪙 {xp}</span>
+                        <span className="text-[#ffbb00] font-bold text-lg sm:text-xl">🪙 {xp}</span>
                     )}
                 </div>
             </div>
             {message && (
                 <div
-                    className={`mb-4 px-4 py-2 rounded ${message.type === "success"
+                    className={`mb-4 px-4 py-2 rounded text-sm sm:text-base ${message.type === "success"
                         ? "bg-green-100 text-green-700"
                         : "bg-red-100 text-red-700"
                         }`}
@@ -84,7 +82,6 @@ export default function TokoPage() {
             ) : (
                 <div className="space-y-5">
                     {items.map((item) => {
-                        // Tentukan icon khusus berdasarkan item_type
                         let iconSrc = `/icons/${item.icon}`;
                         if (item.item_type === "streak_freeze") iconSrc = "/icons/freeze.png";
                         else if (item.item_type === "badge") iconSrc = "/icons/emas.png";
@@ -93,25 +90,27 @@ export default function TokoPage() {
                         return (
                             <div
                                 key={item.id}
-                                className="flex items-center border rounded-xl bg-white shadow hover:shadow-lg transition px-6 py-4"
+                                className="flex flex-col sm:flex-row items-center sm:items-stretch border rounded-xl bg-white shadow hover:shadow-lg transition px-3 sm:px-6 py-4 gap-3 sm:gap-6"
                             >
-                                <Image
-                                    src={iconSrc}
-                                    alt={item.name}
-                                    width={64}
-                                    height={64}
-                                    className="rounded mr-6"
-                                />
-                                <div className="flex-1">
-                                    <div className="font-semibold text-xl mb-1">{item.name}</div>
-                                    <div className="text-gray-600 text-sm mb-2">{item.description}</div>
+                                <div className="flex justify-center items-center w-full sm:w-auto">
+                                    <Image
+                                        src={iconSrc}
+                                        alt={item.name}
+                                        width={64}
+                                        height={64}
+                                        className="rounded mb-2 sm:mb-0 sm:mr-6"
+                                    />
                                 </div>
-                                <div className="flex flex-col items-end min-w-[120px]">
-                                    <div className="font-bold text-[#ffbb00] mb-2">🪙 {item.xp_cost} XP</div>
+                                <div className="flex-1 w-full text-center sm:text-left">
+                                    <div className="font-semibold text-lg sm:text-xl mb-1">{item.name}</div>
+                                    <div className="text-gray-600 text-xs sm:text-sm mb-2">{item.description}</div>
+                                </div>
+                                <div className="flex flex-col items-center sm:items-end min-w-[120px] w-full sm:w-auto">
+                                    <div className="font-bold text-[#ffbb00] mb-2 text-base sm:text-lg">🪙 {item.xp_cost} XP</div>
                                     <button
                                         onClick={() => handleBuy(item.id, item.xp_cost)}
                                         disabled={buying === item.id || xp < item.xp_cost}
-                                        className={`px-5 py-2 rounded-lg bg-[#ffbb00] text-white font-semibold hover:bg-yellow-500 transition ${buying === item.id ? "opacity-60 cursor-not-allowed" : ""
+                                        className={`w-full sm:w-auto px-4 py-2 rounded-lg bg-[#ffbb00] text-white font-semibold hover:bg-yellow-500 transition ${buying === item.id ? "opacity-60 cursor-not-allowed" : ""
                                             } ${xp < item.xp_cost ? "opacity-50 cursor-not-allowed" : ""}`}
                                     >
                                         {buying === item.id
