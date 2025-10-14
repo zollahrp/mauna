@@ -18,9 +18,6 @@ import {
 import Link from "next/link"
 import api from "@/lib/axios"
 
-const DEFAULT_IMAGE =
-  "http://localhost:8000/storage/kamus/WIN_20251011_22_26_22_Pro_20251013_151450.jpg"
-
 // SWR fetcher untuk API yang mengembalikan { success, data }
 const fetcher = async (url) => {
   const r = await api.get(url, { cache: "no-store" })
@@ -51,7 +48,7 @@ export default function DictionaryDetail({ params }) {
     try {
       const raw = localStorage.getItem(`fav_${id}`)
       setLiked(raw === "1")
-    } catch {}
+    } catch { }
   }, [id])
 
   const onToggleLike = useCallback(() => {
@@ -60,32 +57,23 @@ export default function DictionaryDetail({ params }) {
       try {
         if (next) localStorage.setItem(`fav_${id}`, "1")
         else localStorage.removeItem(`fav_${id}`)
-      } catch {}
+      } catch { }
       showToast(next ? "Ditambahkan ke Favorit" : "Dihapus dari Favorit", data?.word_text ?? "Item")
       return next
     })
   }, [id, data?.word_text, showToast])
 
-  // Perbaikan: image_url_ref bisa absolute atau relative
-  const imageUrl = useMemo(() => {
-    if (!data) return DEFAULT_IMAGE
-    if (data.image_url_ref) {
-      // Jika sudah absolute, pakai langsung
-      if (data.image_url_ref.startsWith("http")) return data.image_url_ref
-    // Jika relative, gabungkan dengan apiBase
-    return apiBase
-      ? `${apiBase.replace(/\/$/, "")}/${data.image_url_ref.replace(/^\//, "")}`
-      : DEFAULT_IMAGE
-    }
-    return DEFAULT_IMAGE
-  }, [data, apiBase])
+  // Gunakan langsung image_url dari API
+  const imageUrl = data?.image_url && data.image_url !== "" ? data.image_url : undefined;
+
 
   useEffect(() => {
     if (data && !data.video_url) setTab("image")
   }, [data])
 
+  // Format tanggal jika ada (tidak ada di contoh json, jadi fallback)
   const createdAt = useMemo(() => {
-    if (!data?.created_at) return "Tidak diketahui"
+    if (!data?.created_at) return "-"
     try {
       return new Intl.DateTimeFormat("id-ID", {
         day: "2-digit",
@@ -93,7 +81,7 @@ export default function DictionaryDetail({ params }) {
         year: "numeric",
       }).format(new Date(data.created_at))
     } catch {
-      return "Tidak diketahui"
+      return "-"
     }
   }, [data?.created_at])
 
@@ -235,8 +223,9 @@ export default function DictionaryDetail({ params }) {
             </div>
           )}
 
+
           {/* Konten Gambar */}
-          {tab === "image" && (
+          {tab === "image" && imageUrl && (
             <button
               type="button"
               onClick={() => setZoomOpen(true)}
@@ -250,7 +239,7 @@ export default function DictionaryDetail({ params }) {
                   width={1280}
                   height={720}
                   className="w-full h-auto object-cover aspect-video"
-                  unoptimized // Perbaikan: agar tidak error domain next/image
+                  unoptimized
                 />
                 <div className="absolute inset-0 grid place-items-center bg-foreground/0 group-hover:bg-foreground/10 transition-colors">
                   <span className="text-background text-sm hidden sm:block">Klik untuk perbesar</span>
@@ -310,13 +299,14 @@ export default function DictionaryDetail({ params }) {
           <p className="text-muted-foreground text-black leading-relaxed">{data.definition}</p>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-2">
-            <InfoItem label="Kategori" value={data.category_display || data.category || "-"} />
+            <InfoItem label="Kategori" value={data.category || "-"} />
             <InfoItem label="Dibuat" value={createdAt} />
             <InfoItem label="Total Soal" value={typeof data.total_soal === "number" ? String(data.total_soal) : "-"} />
           </div>
 
+
           {/* Gambar kecil sebagai pratinjau jika tab video aktif */}
-          {tab === "video" && (
+          {tab === "video" && imageUrl && (
             <button
               type="button"
               onClick={() => setTab("image")}
@@ -340,7 +330,7 @@ export default function DictionaryDetail({ params }) {
       </div>
 
       {/* Modal Zoom Gambar */}
-      {zoomOpen && (
+      {zoomOpen && imageUrl && (
         <div
           className="fixed inset-0 z-50 bg-foreground/70 backdrop-blur-sm flex items-center justify-center p-4"
           role="dialog"
