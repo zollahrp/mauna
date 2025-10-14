@@ -6,6 +6,7 @@ import Footer from "./Footer";
 import Sidebar from "./Sidebar";
 
 import { Toaster } from "react-hot-toast";
+import SidebarAdmin from "./SidebarAdmin";
 
 export default function ClientWrapper({ children }) {
   const pathname = usePathname();
@@ -18,6 +19,7 @@ export default function ClientWrapper({ children }) {
 
   // Cek apakah ini halaman kelas
   const isKelas = pathname.startsWith("/kelas");
+  const isAdmin = pathname.startsWith("/admin");
 
   // Layout untuk halaman auth
   if (hideNavAndFooter.includes(pathname)) {
@@ -34,6 +36,15 @@ export default function ClientWrapper({ children }) {
     return (
       <div className="flex min-h-screen">
         <Sidebar />
+        <main className="flex-1">{children}</main>
+      </div>
+    );
+  }
+
+  // Layout Admin
+  if (isAdmin) {
+    return (
+      <div className="flex min-h-screen">
         <main className="flex-1">{children}</main>
       </div>
     );

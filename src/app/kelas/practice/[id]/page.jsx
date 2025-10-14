@@ -169,7 +169,7 @@ export default function PracticePage() {
 
         {/* PILIH_GAMBAR */}
         {question.tipe_soal === "PILIH_GAMBAR" && (
-          <div className="grid grid-cols-2 gap-4 mt-4">
+          <div className="grid grid-cols-2   text-black gap-4 mt-4">
             {gambarOptions.map((dict) => (
               <button
                 key={dict.id}
@@ -193,7 +193,7 @@ export default function PracticePage() {
             {kataOptions.map((dict) => (
               <button
                 key={dict.id}
-                className="border rounded-lg p-4 text-lg font-bold hover:bg-green-50 transition"
+                className="border rounded-lg p-4 text-lg text-black font-bold hover:bg-green-50 transition"
                 onClick={() => handleAnswer(dict.id === question.dictionary_id)}
               >
                 {dict.word_text}
