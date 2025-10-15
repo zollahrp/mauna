@@ -48,68 +48,87 @@ export default function JourneyPage() {
   }, [data]);
 
   if (loading) {
-    return <div className="min-h-[60vh] grid place-items-center text-muted-foreground">Memuat data level...</div>;
+    return (
+      <div className="min-h-[60vh] grid place-items-center text-gray-500 text-sm">
+        Memuat data level...
+      </div>
+    );
   }
 
   if (!data) {
     return (
-      <div className="min-h-[60vh] grid place-items-center text-muted-foreground">Tidak ada data level ditemukan.</div>
+      <div className="min-h-[60vh] grid place-items-center text-gray-500 text-sm">
+        Tidak ada data level ditemukan.
+      </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-8 max-w-5xl mx-auto">
+    <div className="p-6 md:p-10 space-y-12 max-w-6xl mx-auto">
       {levels.map(([name, lvl]) => {
-        const bannerColor = LEVEL_COLORS[name] ?? "#eee";
+        const bannerColor = LEVEL_COLORS[name] ?? "#ccc";
         const isUnlockedLevel = !!lvl?.is_level_unlocked;
         const total = Number(lvl?.total_sublevels || 0);
         const completed = Number(lvl?.completed || 0);
         const starsCount = Number(lvl?.total_stars || 0);
 
         return (
-          <section key={String(lvl?.level_id || name)} aria-labelledby={`level-${name}`} className="mb-12">
-            {/* Level Info Box */}
-            <div
-              className="rounded-2xl shadow-xl p-8 flex flex-col md:flex-row items-center justify-between mb-6"
-              style={{
-                background: bannerColor,
-                color: "#fff",
-                opacity: isUnlockedLevel ? 1 : 0.85,
-              }}
-            >
-              <div>
-                <h2 id={`level-${name}`} className="text-2xl font-bold mb-2">{name}</h2>
-                <div className="flex gap-8 text-lg font-semibold">
-                  <span>
-                    Sublevel: {completed} / {total}
-                  </span>
-                  <span>
-                    Bintang: {starsCount} / {total * 3}
-                  </span>
+          <section key={String(lvl?.level_id || name)} className="space-y-8">
+            {/* === Header Level (Modern Style) === */}
+            <div className="rounded-2xl border border-gray-100 bg-gradient-to-r from-white to-gray-50 shadow-sm hover:shadow-md transition-all duration-300 px-6 py-5 md:px-8 md:py-6 flex flex-col md:flex-row items-center justify-between gap-4">
+              {/* Left Section */}
+              <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-6 w-full">
+                {/* Level Badge */}
+                <div
+                  className="w-14 h-14 flex items-center justify-center rounded-xl text-white font-bold text-lg shadow-sm"
+                  style={{
+                    backgroundColor: bannerColor,
+                  }}
+                >
+                  {name.charAt(0)}
+                </div>
+
+                {/* Level Info */}
+                <div className="text-center md:text-left">
+                  <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-1">{name}</h2>
+                  <p className="text-gray-500 text-sm md:text-base">
+                    Sublevel <span className="font-semibold text-gray-800">{completed}</span> / {total} • ⭐{" "}
+                    <span className="font-semibold text-gray-800">{starsCount}</span> / {total * 3}
+                  </p>
                 </div>
               </div>
-              <div className="flex flex-col items-end gap-3 mt-4 md:mt-0">
-                <span className="bg-white/30 px-5 py-2 rounded-xl font-bold text-lg shadow">
-                  {isUnlockedLevel ? (lvl?.is_level_completed ? "Selesai ✔️" : "Belum Selesai") : "Terkunci"}
+
+              {/* Status Badge */}
+              <div className="shrink-0">
+                <span
+                  className={`px-4 py-1.5 text-sm font-medium rounded-full shadow-sm transition-all ${isUnlockedLevel
+                      ? lvl?.is_level_completed
+                        ? "bg-green-100 text-green-700 border border-green-200"
+                        : "bg-yellow-100 text-yellow-700 border border-yellow-200"
+                      : "bg-gray-100 text-gray-500 border border-gray-200"
+                    }`}
+                >
+                  {isUnlockedLevel
+                    ? lvl?.is_level_completed
+                      ? "Selesai"
+                      : "Belum Selesai"
+                    : "Terkunci"}
                 </span>
               </div>
             </div>
 
-            {/* Sublevel Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-8 justify-center px-2 py-2">
-              {lvl.sublevels.map((sub, idx) => {
+
+            {/* === Sublevel Grid === */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 justify-items-center">
+              {lvl.sublevels.map((sub) => {
                 const isUnlocked = sub.is_unlocked;
                 return (
                   <div
                     key={sub.sublevel_id}
-                    className={`relative flex flex-col items-center justify-center rounded-2xl shadow-lg border-2 transition-all duration-200 w-28 h-32 bg-white
-                      ${isUnlocked
-                        ? "border-[#ffbb00] cursor-pointer hover:scale-105 hover:shadow-xl"
-                        : "border-gray-300 opacity-70"
+                    className={`relative flex flex-col items-center justify-center rounded-2xl border transition-all w-32 h-36 bg-white shadow-sm hover:shadow-md ${isUnlocked
+                        ? "border-[#ffbb00] cursor-pointer hover:-translate-y-1 hover:shadow-lg"
+                        : "border-gray-200 opacity-60"
                       }`}
-                    style={{
-                      boxShadow: isUnlocked ? "0 4px 16px rgba(255,187,0,0.08)" : "0 2px 8px rgba(0,0,0,0.04)",
-                    }}
                     onClick={async () => {
                       if (isUnlocked) {
                         try {
@@ -124,7 +143,7 @@ export default function JourneyPage() {
                           } else {
                             toast.error("Quiz tidak ditemukan.");
                           }
-                        } catch (e) {
+                        } catch {
                           toast.error("Gagal memulai sublevel. Coba lagi.");
                         } finally {
                           setStartingId(null);
@@ -132,10 +151,18 @@ export default function JourneyPage() {
                       }
                     }}
                   >
-                    <span className={`text-xs font-semibold mb-1 text-center ${isUnlocked ? "text-gray-700" : "text-gray-400"}`}>
+                    <span
+                      className={`text-xs font-medium mb-1 text-center ${isUnlocked ? "text-gray-700" : "text-gray-400"
+                        }`}
+                    >
                       {sub.sublevel_name}
                     </span>
-                    <span className={`text-2xl font-bold ${isUnlocked ? "text-gray-800" : "text-gray-400"}`}>{sub.sublevel_id}</span>
+                    <span
+                      className={`text-2xl font-bold ${isUnlocked ? "text-gray-900" : "text-gray-400"
+                        }`}
+                    >
+                      {sub.sublevel_id}
+                    </span>
                     <div className="flex mt-2 gap-1">
                       {Array.from({ length: 3 }).map((_, i) => (
                         <Star
@@ -148,7 +175,7 @@ export default function JourneyPage() {
                     </div>
                     {!isUnlocked && (
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center rounded-2xl z-10">
-                        <Lock size={32} className="text-white" />
+                        <Lock size={28} className="text-white" />
                       </div>
                     )}
                   </div>
@@ -159,34 +186,31 @@ export default function JourneyPage() {
         );
       })}
 
-      {/* Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center text-sm mt-8">
-        <div className="rounded-lg p-3 shadow-sm" style={{ background: "var(--summary-a)" }}>
-          <p className="font-semibold" style={{ color: "var(--level-star)" }}>
-            Sublevel
-          </p>
-          <p className="text-foreground">
-            {data.overall_summary.completed_sublevels} / {data.overall_summary.total_sublevels}
-          </p>
-        </div>
-        <div className="rounded-lg p-3 shadow-sm" style={{ background: "var(--summary-b)" }}>
-          <p className="font-semibold" style={{ color: "var(--level-elementary)" }}>
-            Rata-rata Skor
-          </p>
-          <p className="text-foreground">{Number(data.overall_summary.average_score).toFixed(1)}%</p>
-        </div>
-        <div className="rounded-lg p-3 shadow-sm" style={{ background: "var(--summary-a)" }}>
-          <p className="font-semibold" style={{ color: "var(--level-star)" }}>
-            Total Bintang
-          </p>
-          <p className="text-foreground">{data.overall_summary.total_stars}</p>
-        </div>
-        <div className="rounded-lg p-3 shadow-sm" style={{ background: "var(--summary-b)" }}>
-          <p className="font-semibold" style={{ color: "var(--level-elementary)" }}>
-            Tingkat Selesai
-          </p>
-          <p className="text-foreground">{Number(data.overall_summary.completion_rate).toFixed(1)}%</p>
-        </div>
+      {/* === Summary Section === */}
+      <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+        {[
+          {
+            label: "Sublevel",
+            value: `${data.overall_summary.completed_sublevels} / ${data.overall_summary.total_sublevels}`,
+          },
+          {
+            label: "Rata-rata Skor",
+            value: `${Number(data.overall_summary.average_score).toFixed(1)}%`,
+          },
+          { label: "Total Bintang", value: data.overall_summary.total_stars },
+          {
+            label: "Tingkat Selesai",
+            value: `${Number(data.overall_summary.completion_rate).toFixed(1)}%`,
+          },
+        ].map((item, i) => (
+          <div
+            key={i}
+            className="rounded-2xl bg-white border border-gray-200 p-6 shadow-sm hover:shadow-md transition-all"
+          >
+            <p className="text-gray-500 font-medium mb-2">{item.label}</p>
+            <p className="text-gray-900 font-extrabold text-2xl">{item.value}</p>
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -138,7 +138,7 @@ export default function DictionaryDetail({ params }) {
     )
 
   return (
-    <div className="min-h-screen bg-white p-6 md:p-10 space-y-6 font-poppins">
+    <div className="min-h-screen bg-white px-6 py-10 font-poppins md:pl-[17rem] md:pr-[17rem] transition-all duration-300">
       {/* Tombol kembali */}
       <Link href="/kelas/dictionary">
         <div className="inline-flex items-center text-sm text-gray-600 hover:text-[#ffbb00] transition cursor-pointer">
@@ -153,21 +153,19 @@ export default function DictionaryDetail({ params }) {
             <button
               onClick={() => setTab("video")}
               disabled={!data.video_url}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition cursor-pointer ${
-                tab === "video"
-                  ? "bg-[#ffbb00] text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              } ${!data.video_url && "opacity-50 cursor-not-allowed"}`}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition cursor-pointer ${tab === "video"
+                ? "bg-[#ffbb00] text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                } ${!data.video_url && "opacity-50 cursor-not-allowed"}`}
             >
               <VideoIcon className="size-4" /> Video
             </button>
             <button
               onClick={() => setTab("image")}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition cursor-pointer ${
-                tab === "image"
-                  ? "bg-[#ffbb00] text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition cursor-pointer ${tab === "image"
+                ? "bg-[#ffbb00] text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
             >
               <ImageIcon className="size-4" /> Gambar
             </button>
@@ -255,11 +253,10 @@ export default function DictionaryDetail({ params }) {
       {/* Toast */}
       {toast && (
         <div
-          className={`fixed bottom-6 left-1/2 -translate-x-1/2 px-5 py-3 rounded-lg shadow-md text-sm ${
-            toast.type === "error"
-              ? "bg-red-50 text-red-600 border border-red-200"
-              : "bg-white text-gray-700 border border-gray-200"
-          }`}
+          className={`fixed bottom-6 left-1/2 -translate-x-1/2 px-5 py-3 rounded-lg shadow-md text-sm ${toast.type === "error"
+            ? "bg-red-50 text-red-600 border border-red-200"
+            : "bg-white text-gray-700 border border-gray-200"
+            }`}
         >
           {toast.title}
         </div>
@@ -281,11 +278,10 @@ function Button({ children, onClick, active }) {
   return (
     <button
       onClick={onClick}
-      className={`inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition cursor-pointer ${
-        active
-          ? "bg-[#ffbb00] text-white"
-          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-      }`}
+      className={`inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition cursor-pointer ${active
+        ? "bg-[#ffbb00] text-white"
+        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+        }`}
     >
       {children}
     </button>

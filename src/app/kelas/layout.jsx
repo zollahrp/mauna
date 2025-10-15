@@ -4,14 +4,15 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import api from "@/lib/axios";
+
 export default function KelasLayout({ children }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-
   const [userDailyProgress, setUserDailyProgress] = useState(null);
 
   const getDailyProgress = async () => {
     try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const token =
+        typeof window !== "undefined" ? localStorage.getItem("token") : null;
       if (!token) return;
       const res = await api.get("/api/auth/daily-task");
       if (res.data?.data) {
@@ -29,12 +30,14 @@ export default function KelasLayout({ children }) {
   }, []);
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-[#FFFFFF]">
+    <div className="relative flex min-h-screen bg-white">
       {/* Konten utama */}
-      <main className="flex-1 p-4 md:p-6">{children}</main>
+      <main className="flex-1 p-6 md:p-0 md:pr-[17rem] md:pl-10 transition-all duration-300">
+        {children}
+      </main>
 
-      {/* Sidebar kanan - hidden di mobile */}
-      <aside className="hidden md:flex w-full md:w-96 md:mr-80 p-6 flex-col gap-6">
+      {/* Sidebar kanan */}
+      <aside className="hidden md:flex fixed right-35 top-0 bottom-0 w-[24rem] p-8 flex-col gap-6 overflow-y-auto bg-white">
         {/* Leaderboard */}
         <div className="rounded-2xl p-6 shadow-md bg-white">
           <Link href="/kelas/leaderboard" className="flex flex-col items-center">
@@ -42,7 +45,6 @@ export default function KelasLayout({ children }) {
               Buka Papan Skor!
             </h3>
           </Link>
-
 
           <div className="flex items-center gap-3">
             <Image
@@ -55,15 +57,21 @@ export default function KelasLayout({ children }) {
             <p className="text-sm text-gray-600 leading-snug">
               {userDailyProgress?.is_completed ? (
                 <>
-                  <span className="font-semibold text-green-600">Selamat! 🎉</span> <br />
-                  <span className="text-[#00bfff] font-semibold">Ayo terus latihan, puncak leaderboard menantimu!</span>
+                  <span className="font-semibold text-green-600">Selamat!</span>{" "}
+                  <br />
+                  <span className="text-[#000000] font-semibold">
+                    Ayo terus latihan, puncak leaderboard menantimu!
+                  </span>
                 </>
               ) : (
                 <>
                   Tinggal{" "}
                   <span className="font-semibold text-[#ffbb00]">
                     {userDailyProgress
-                      ? `${Math.max(3 - userDailyProgress.completed_sublevels, 0)} pelajaran lagi`
+                      ? `${Math.max(
+                          3 - userDailyProgress.completed_sublevels,
+                          0
+                        )} pelajaran lagi`
                       : "3 pelajaran lagi"}
                   </span>{" "}
                   untuk mulai berkompetisi. Semangat, kamu pasti bisa! 💪
@@ -73,17 +81,16 @@ export default function KelasLayout({ children }) {
           </div>
         </div>
 
-
         {/* Misi Harian */}
         <div className="rounded-2xl p-6 shadow-md bg-white">
           <div className="flex justify-between items-center mb-3">
             <h3 className="font-semibold text-gray-800 text-lg">Misi Harian</h3>
-            <Link
+            {/* <Link
               href="/misi"
               className="text-sm text-[#00bfff] font-medium hover:underline"
             >
               Lihat semua
-            </Link>
+            </Link> */}
           </div>
           <p className="text-sm text-gray-600 mb-2">Dapatkan 10 XP</p>
           <div className="w-full h-4 bg-gray-200 rounded-full overflow-hidden">
@@ -91,7 +98,10 @@ export default function KelasLayout({ children }) {
               className="h-full bg-[#ffbb00]"
               style={{
                 width: userDailyProgress
-                  ? `${Math.min((userDailyProgress.completed_sublevels / 3) * 100, 100)}%`
+                  ? `${Math.min(
+                      (userDailyProgress.completed_sublevels / 3) * 100,
+                      100
+                    )}%`
                   : "0%",
               }}
             ></div>
@@ -101,7 +111,9 @@ export default function KelasLayout({ children }) {
               ? `${userDailyProgress.completed_sublevels} / 3`
               : "0 / 3"}
             {userDailyProgress?.is_completed && (
-              <span className="ml-2 text-green-600 font-semibold">Selesai!</span>
+              <span className="ml-2 text-green-600 font-semibold">
+                Selesai!
+              </span>
             )}
           </p>
         </div>

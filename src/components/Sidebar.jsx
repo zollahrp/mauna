@@ -68,7 +68,9 @@ export default function Sidebar() {
   return (
     <>
       {/* Sidebar Desktop */}
-      <aside className="hidden md:flex w-64 bg-white border-r border-gray-200 min-h-screen flex-col p-4 font-[var(--font-poppins)]">
+      <aside
+        className="hidden md:flex fixed top-0 left-0 h-screen w-64 bg-white border-r border-gray-200 flex-col p-4 font-[var(--font-poppins)] overflow-y-auto shadow-md z-40"
+      >
         {/* Logo */}
         <div className="flex items-center gap-2 mb-8 px-2">
           <Image
