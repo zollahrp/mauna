@@ -308,11 +308,11 @@ export default function ProfilePage() {
             >
               <Upload size={16} /> UNGGAH FOTO KAMU
             </button>
-            {avatarFile && (
+            {/* {avatarFile && (
               <p className="text-gray-600 text-xs mt-2">
                 File: {avatarFile.name}
               </p>
-            )}
+            )} */}
             <p className="text-gray-500 text-xs mt-4 text-center md:text-left">
               Setidaknya 800x800 px direkomendasikan.
             </p>
@@ -447,11 +447,11 @@ export default function ProfilePage() {
               </p>
             </div>
             <div>
-              <p className="font-semibold text-gray-500 text-xs">Verified</p>
+              <p className="font-semibold text-gray-500 text-xs">Total Poin</p>
               <p
-                className={user.is_verified ? "text-green-600" : "text-red-600"}
+                className={user.total_xp ? "text-green-600" : "text-red-600"}
               >
-                {user.is_verified ? "Ya" : "Tidak"}
+                {user.total_xp || 0}
               </p>
             </div>
             <div>

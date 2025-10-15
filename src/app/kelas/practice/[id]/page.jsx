@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import QuizKamera from "@/components/quizKamera";
+import { useEffect, useState, useMemo } from "react";
+import SibiAlphabetQuizCamera from "@/components/camera/SibiAlphabetQuizCamera";
+import SibiNumberQuizCamera from "@/components/camera/SibiNumberQuizCamera";
 import api from "@/lib/axios";
 import { useRouter } from "next/navigation";
 
@@ -25,7 +26,7 @@ export default function PracticePage() {
     const quizData = localStorage.getItem("current_quiz");
     if (quizData) {
       const parsed = JSON.parse(quizData);
-      setQuiz(parsed);
+      setQuiz(parsed.data || parsed);
     }
     async function fetchDictionary() {
       try {
@@ -38,30 +39,29 @@ export default function PracticePage() {
     fetchDictionary();
   }, []);
 
-  const total = quiz?.questions?.length || 0;
+  const total = quiz?.total_questions || 0;
   const question = quiz?.questions?.[idx];
 
-  // Untuk PILIH_GAMBAR
-  const gambarOptions = question?.tipe_soal === "PILIH_GAMBAR"
-    ? (() => {
-        if (!dictionaryList.length || !question) return [];
-        const correctDict = dictionaryList.find(d => d.id === question.dictionary_id);
-        const randomDicts = getRandomOptions(dictionaryList, question.dictionary_id, 3);
-        const options = [...randomDicts, correctDict].filter(Boolean);
-        return options.sort(() => 0.5 - Math.random());
-      })()
-    : [];
+  const dictionaryItem = useMemo(() => {
+    if (!dictionaryList.length || !question) return null;
+    return dictionaryList.find(d => d.id === question.dictionary_id);
+  }, [dictionaryList, question]);
 
-  // Untuk TEBAK_GAMBAR
-  const kataOptions = question?.tipe_soal === "TEBAK_GAMBAR"
-    ? (() => {
-        if (!dictionaryList.length || !question) return [];
-        const correctDict = dictionaryList.find(d => d.id === question.dictionary_id);
-        const randomDicts = getRandomOptions(dictionaryList, question.dictionary_id, 3);
-        const options = [...randomDicts, correctDict].filter(Boolean);
-        return options.sort(() => 0.5 - Math.random());
-      })()
-    : [];
+  const currentQuestionType = question?.tipe_soal;
+
+  // Logika baru untuk membuat opsi pilihan ganda
+  const options = useMemo(() => {
+    if (!dictionaryList.length || !question) return [];
+
+    const correctDict = dictionaryList.find(d => d.id === question.dictionary_id);
+    const randomOptions = getRandomOptions(dictionaryList, question.dictionary_id, 3);
+    
+    // Gabungkan jawaban yang benar dengan 3 jawaban acak
+    const allOptions = [...randomOptions, correctDict].filter(Boolean);
+    
+    // Acak urutan opsi agar jawaban benar tidak selalu di posisi yang sama
+    return allOptions.sort(() => 0.5 - Math.random());
+  }, [dictionaryList, question]);
 
   function handleAnswer(isCorrect) {
     if (isCorrect) {
@@ -94,7 +94,7 @@ export default function PracticePage() {
     if (finished && quiz) kirimHasil();
   }, [finished, quiz, correct, total]);
 
-  if (!quiz) {
+  if (!quiz || !question) {
     return (
       <div className="min-h-[60vh] grid place-items-center text-muted-foreground">
         Quiz tidak ditemukan.
@@ -142,14 +142,6 @@ export default function PracticePage() {
     );
   }
 
-  // Ambil gambar untuk soal TEBAK_GAMBAR
-  let tebakGambarUrl = "";
-  if (question?.tipe_soal === "TEBAK_GAMBAR" && dictionaryList.length) {
-    const dict = dictionaryList.find(d => d.id === question.dictionary_id);
-    tebakGambarUrl = dict?.image_url_ref || "/images/default.jpg";
-    console.log("Gambar TEBAK_GAMBAR:", tebakGambarUrl);
-  }
-
   return (
     <section className="max-w-2xl mx-auto p-4 space-y-6">
       <div className="flex items-center justify-between">
@@ -162,73 +154,112 @@ export default function PracticePage() {
         </div>
       </div>
       <div className="bg-white rounded-xl border shadow-sm p-6 space-y-4">
+        
         <p className="text-lg text-black font-semibold">{question.question}</p>
-        {/* Tampilkan gambar di soal TEBAK_GAMBAR */}
-        {question.tipe_soal === "TEBAK_GAMBAR" && (
-          <div className="flex justify-center mb-4">
-            <img
-              src={`http://${tebakGambarUrl}`}
-              alt="Gambar soal"
-              className="rounded-lg border w-48 h-48 object-cover bg-gray-100"
-            />
-          </div>
+        
+        {/* TIPE SOAL OPEN_CAMERA */}
+        {currentQuestionType === "OPEN_CAMERA" && (
+            <>
+                <div className="rounded-lg bg-muted p-3 mb-2">
+                    <p className="text-sm font-medium text-black">
+                        Target: <span className="font-bold">{question.dictionary_word}</span>
+                    </p>
+                    <p className="text-sm text-muted-foreground text-black">
+                        {question.dictionary_definition}
+                    </p>
+                </div>
+                {question.dictionary_category === "ALPHABET" && (
+                    <SibiAlphabetQuizCamera
+                        targetWord={question.dictionary_word}
+                        onFinish={() => handleAnswer(true)}
+                        onWrong={() => setTries(tries + 1)}
+                    />
+                )}
+                {question.dictionary_category === "NUMBERS" && (
+                    <SibiNumberQuizCamera
+                        targetAnswer={question.answer}
+                        onFinish={() => handleAnswer(true)}
+                        onWrong={() => setTries(tries + 1)}
+                    />
+                )}
+            </>
         )}
-        <div className="rounded-lg bg-muted p-3 mb-2">
-          <p className="text-sm font-medium text-black">
-            Target: <span className="font-bold">{question.dictionary_word}</span>
-          </p>
-          <p className="text-sm text-muted-foreground text-black">
-            {question.dictionary_definition}
-          </p>
-        </div>
 
-        {/* PILIH_GAMBAR */}
-        {question.tipe_soal === "PILIH_GAMBAR" && (
-          <div className="grid grid-cols-2 text-black gap-4 mt-4">
-            {gambarOptions.map((dict) => (
-              <button
-                key={dict.id}
-                className="border rounded-lg overflow-hidden hover:shadow-lg transition"
-                onClick={() => handleAnswer(dict.id === question.dictionary_id)}
-              >
-                <img
-                  src={`http://${dict.image_url_ref || "/images/default.jpg"}`}
-                  alt={dict.word_text}
-                  className="w-full h-32 object-cover"
+        {/* TIPE SOAL TEBAK_GAMBAR */}
+        {currentQuestionType === "TEBAK_GAMBAR" && (
+            <>
+                <div className="flex justify-center mb-4">
+                    <img
+                        src={`${question.image_url}`}
+                        alt="Gambar isyarat"
+                        className="rounded-lg border w-48 h-48 object-cover bg-gray-100"
+                    />
+                </div>
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                    {options.map((dict) => (
+                        <button
+                            key={dict.id}
+                            className="border rounded-lg p-4 text-lg text-black font-bold hover:bg-green-50 transition"
+                            onClick={() => handleAnswer(dict.word_text === question.answer)}
+                        >
+                            {dict.word_text}
+                        </button>
+                    ))}
+                </div>
+            </>
+        )}
+
+        {/* TIPE SOAL PILIHAN_GANDA */}
+        {currentQuestionType === "PILIHAN_GANDA" && (
+            <div className="grid grid-cols-2 text-black gap-4 mt-4">
+                {options.map((dict) => {
+                    const isAnswerAnImage = question.answer && question.answer.includes('://');
+
+                    if (isAnswerAnImage) {
+                        return (
+                            <button
+                                key={dict.id}
+                                className="border rounded-lg overflow-hidden hover:shadow-lg transition"
+                                onClick={() => handleAnswer(`${dict.image_url_ref}` === question.answer)}
+                            >
+                                <img
+                                    src={`${dict.image_url_ref || "/images/default.jpg"}`}
+                                    alt={dict.word_text}
+                                    className="w-full h-32 object-cover"
+                                />
+                            </button>
+                        );
+                    } else {
+                        return (
+                            <button
+                                key={dict.id}
+                                className="border rounded-lg p-4 text-sm text-black font-bold hover:bg-green-50 transition"
+                                onClick={() => handleAnswer(dict.definition === question.answer)}
+                            >
+                                {dict.definition}
+                            </button>
+                        );
+                    }
+                })}
+            </div>
+        )}
+
+        {/* TIPE SOAL MATEMATIKA */}
+        {currentQuestionType === "MATEMATIKA" && (
+            <>
+                <div className="rounded-lg bg-blue-50 p-6 mb-4">
+                    <h2 className="text-4xl text-black font-bold text-center">
+                        {question.question}
+                    </h2>
+                </div>
+                <SibiNumberQuizCamera
+                    targetAnswer={question.answer}
+                    onFinish={() => handleAnswer(true)}
+                    onWrong={() => setTries(tries + 1)}
                 />
-                <div className="p-2 text-center font-semibold">{dict.word_text}</div>
-              </button>
-            ))}
-          </div>
+            </>
         )}
-
-        {/* TEBAK_GAMBAR */}
-        {question.tipe_soal === "TEBAK_GAMBAR" && (
-          <div className="grid grid-cols-2 gap-4 mt-4">
-            {kataOptions.map((dict) => (
-              <button
-                key={dict.id}
-                className="border rounded-lg p-4 text-lg text-black font-bold hover:bg-green-50 transition"
-                onClick={() => handleAnswer(dict.id === question.dictionary_id)}
-              >
-                {dict.word_text}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* OPEN_CAMERA */}
-        {question.tipe_soal === "OPEN_CAMERA" && (
-          <QuizKamera
-            targetWord={question.dictionary_word}
-            predictUrl={api.defaults.baseURL + "/predict"}
-            onFinish={() => handleAnswer(true)}
-            onWrong={() => handleAnswer(false)}
-            tries={tries}
-            showToast={false}
-          />
-        )}
-
+        
         {/* Tombol Finish Quiz manual */}
         <button
           type="button"
