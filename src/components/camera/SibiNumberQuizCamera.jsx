@@ -1,6 +1,7 @@
 "use client";
 import api from "@/lib/axios";
 import { useRef, useState, useEffect } from "react";
+// import { loadMediaPipe } from "@/lib/mediapipeLoader";
 
 // Komponen sekarang menerima `targetAnswer`, `onFinish`, `onWrong`, dan `questionText` dari props
 export default function SibiNumberQuizCamera({ targetAnswer, onFinish, onWrong, questionText }) {
@@ -14,6 +15,8 @@ export default function SibiNumberQuizCamera({ targetAnswer, onFinish, onWrong, 
   const cameraRef = useRef(null);
   const lastSentRef = useRef(0);
   const targetAnswerRef = useRef(targetAnswer);
+  const isHandsLoaded = useRef(false);
+
 
   // Sync props to ref and state on change
   useEffect(() => {
@@ -22,70 +25,89 @@ export default function SibiNumberQuizCamera({ targetAnswer, onFinish, onWrong, 
     setMessage(`Tunjukkan jawabannya dengan bahasa isyarat`);
   }, [targetAnswer]);
 
-  // === 1. Setup Mediapipe Hands ===
-  useEffect(() => {
-    if (typeof window === "undefined") return;
+  // === 1. Setup Mediapipe Hands (stabil + delay + single load) ===
+useEffect(() => {
+  if (typeof window === "undefined" || isHandsLoaded.current) return;
+  isHandsLoaded.current = true;
 
-    const loadMediaPipe = async () => {
-      try {
-        const loadScript = (src) => {
-          return new Promise((resolve, reject) => {
-            const script = document.createElement("script");
-            script.src = src;
-            script.onload = resolve;
-            script.onerror = reject;
-            document.head.appendChild(script);
-          });
-        };
+  const loadScript = (src) => {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = src;
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  };
 
-        await loadScript("https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js");
-        await loadScript("https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js");
+  const loadMediaPipe = async () => {
+    // pastikan urutan loading
+    await loadScript("https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js");
+    await loadScript("https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js");
+  };
 
-        const hands = new window.Hands({
-          locateFile: (file) =>
-            `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
-        });
+  const init = async () => {
+    try {
+      await loadMediaPipe();
+      await new Promise((r) => setTimeout(r, 200)); // ⏱ delay 200ms biar wasm siap
 
-        hands.setOptions({
-          maxNumHands: 1,
-          modelComplexity: 1,
-          minDetectionConfidence: 0.7,
-          minTrackingConfidence: 0.7,
-        });
+      if (!window.Hands) {
+        console.error("MediaPipe Hands belum siap");
+        isHandsLoaded.current = false;
+        return;
+      }
 
-        hands.onResults(onResults);
-        handsRef.current = hands;
+      const hands = new window.Hands({
+        locateFile: (file) =>
+          `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/${file}`,
+      });
 
-        if (videoRef.current) {
-          const camera = new window.Camera(videoRef.current, {
-            onFrame: async () => {
+      hands.setOptions({
+        maxNumHands: 1,
+        modelComplexity: 1,
+        minDetectionConfidence: 0.7,
+        minTrackingConfidence: 0.7,
+      });
+
+      hands.onResults(onResults);
+      handsRef.current = hands;
+
+      // Kamera
+      if (videoRef.current) {
+        const camera = new window.Camera(videoRef.current, {
+          onFrame: async () => {
+            try {
               if (handsRef.current && videoRef.current) {
                 await handsRef.current.send({ image: videoRef.current });
               }
-            },
-            width: 400,
-            height: 300,
-          });
-          camera.start();
-          cameraRef.current = camera;
-        }
-
-        setIsLoading(false);
-      } catch (err) {
-        console.error("Error loading MediaPipe:", err);
-        setError("Gagal memuat MediaPipe. Coba refresh halaman.");
-        setIsLoading(false);
+            } catch (err) {
+              console.warn("Mediapipe aborted, skip frame:", err);
+            }
+          },
+          width: 400,
+          height: 300,
+        });
+        camera.start();
+        cameraRef.current = camera;
       }
-    };
 
-    loadMediaPipe();
+      setIsLoading(false);
+    } catch (err) {
+      console.error("Error initializing MediaPipe:", err);
+      setError("Gagal memuat MediaPipe. Coba refresh halaman.");
+      isHandsLoaded.current = false;
+      setIsLoading(false);
+    }
+  };
 
-    return () => {
-      if (cameraRef.current) {
-        cameraRef.current.stop();
-      }
-    };
-  }, []);
+  init();
+
+  return () => {
+    if (cameraRef.current) cameraRef.current.stop();
+    isHandsLoaded.current = false; // bersihkan flag
+  };
+}, []);
+
 
   // === 2. Extract hand vector (9 features for number model) ===
   const extractHandVectorRel = (landmarks) => {

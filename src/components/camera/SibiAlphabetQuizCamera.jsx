@@ -15,71 +15,91 @@ export default function SibiAlphabetQuizCamera({ targetWord, onFinish, onWrong }
   const cameraRef = useRef(null);
   const lastSentRef = useRef(0);
   const currentIndexRef = useRef(0);
+  const isHandsLoaded = useRef(false);
 
-  // === 1. Setup Mediapipe Hands (load from CDN) ===
-  useEffect(() => {
-    if (typeof window === "undefined") return;
 
-    const loadMediaPipe = async () => {
-      try {
-        const loadScript = (src) => {
-          return new Promise((resolve, reject) => {
-            const script = document.createElement("script");
-            script.src = src;
-            script.onload = resolve;
-            script.onerror = reject;
-            document.head.appendChild(script);
-          });
-        };
+  // === 1. Setup Mediapipe Hands (stabil + delay + single load) ===
+useEffect(() => {
+  if (typeof window === "undefined" || isHandsLoaded.current) return;
+  isHandsLoaded.current = true;
 
-        await loadScript("https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js");
-        await loadScript("https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js");
+  const loadScript = (src) => {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = src;
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  };
 
-        const hands = new window.Hands({
-          locateFile: (file) =>
-            `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
-        });
+  const loadMediaPipe = async () => {
+    // pastikan urutan loading
+    await loadScript("https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js");
+    await loadScript("https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js");
+  };
 
-        hands.setOptions({
-          maxNumHands: 1,
-          modelComplexity: 1,
-          minDetectionConfidence: 0.7,
-          minTrackingConfidence: 0.7,
-        });
+  const init = async () => {
+    try {
+      await loadMediaPipe();
+      await new Promise((r) => setTimeout(r, 200)); // ⏱ delay 200ms biar wasm siap
 
-        hands.onResults(onResults);
-        handsRef.current = hands;
+      if (!window.Hands) {
+        console.error("MediaPipe Hands belum siap");
+        isHandsLoaded.current = false;
+        return;
+      }
 
-        if (videoRef.current) {
-          const camera = new window.Camera(videoRef.current, {
-            onFrame: async () => {
+      const hands = new window.Hands({
+        locateFile: (file) =>
+          `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/${file}`,
+      });
+
+      hands.setOptions({
+        maxNumHands: 1,
+        modelComplexity: 1,
+        minDetectionConfidence: 0.7,
+        minTrackingConfidence: 0.7,
+      });
+
+      hands.onResults(onResults);
+      handsRef.current = hands;
+
+      // Kamera
+      if (videoRef.current) {
+        const camera = new window.Camera(videoRef.current, {
+          onFrame: async () => {
+            try {
               if (handsRef.current && videoRef.current) {
                 await handsRef.current.send({ image: videoRef.current });
               }
-            },
-            width: 400,
-            height: 300,
-          });
-          camera.start();
-          cameraRef.current = camera;
-        }
-
-        setIsLoading(false);
-      } catch (err) {
-        console.error("Error loading MediaPipe:", err);
-        setError("Gagal memuat MediaPipe. Coba refresh halaman.");
-        setIsLoading(false);
+            } catch (err) {
+              console.warn("Mediapipe aborted, skip frame:", err);
+            }
+          },
+          width: 400,
+          height: 300,
+        });
+        camera.start();
+        cameraRef.current = camera;
       }
-    };
 
-    loadMediaPipe();
+      setIsLoading(false);
+    } catch (err) {
+      console.error("Error initializing MediaPipe:", err);
+      setError("Gagal memuat MediaPipe. Coba refresh halaman.");
+      isHandsLoaded.current = false;
+      setIsLoading(false);
+    }
+  };
 
-    return () => {
-      if (cameraRef.current) {
-        cameraRef.current.stop();
-      }
-    };
-  }, []);
+  init();
+
+  return () => {
+    if (cameraRef.current) cameraRef.current.stop();
+    isHandsLoaded.current = false; // bersihkan flag
+  };
+}, []);
 
   // === 2. Extract advanced features (same as Python training) ===
   const extractHandVectorAdvanced = (landmarks) => {
