@@ -1,8 +1,13 @@
 "use client";
 
 import React, { useRef, useEffect, useState } from "react";
+// import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+// import Lottie from "react-lottie-player";
+import mauna from "../../public/mauna.json";
+// import communication from "../../public/communication.json";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+
 import dynamic from "next/dynamic";
 
 // Lazy load DotLottieReact
@@ -22,7 +27,7 @@ function LottieWithVisibility({ src, loop, autoplay, className, ...props }) {
 
   React.useEffect(() => {
     let isIntersecting = false;
-    const node = containerRef.current;
+    const node = containerRef.current; // simpan referensi node
 
     function handleTabVisibility() {
       if (isIntersecting && document.visibilityState === "visible") {
@@ -46,7 +51,7 @@ function LottieWithVisibility({ src, loop, autoplay, className, ...props }) {
 
     return () => {
       document.removeEventListener("visibilitychange", handleTabVisibility);
-      if (node) observer.unobserve(node);
+      if (node) observer.unobserve(node); // gunakan node, bukan containerRef.current
       observer.disconnect();
     };
   }, []);
@@ -99,9 +104,9 @@ function ScrollLottie({ className, animationData }) {
     <div ref={containerRef} className={className}>
       <Lottie
         animationData={animationData}
-        play={false}
+        play={false} // 🚫 jangan autoplay
         loop={false}
-        goTo={progress * 100}
+        goTo={progress * 100} // 🚀 pakai goTo, range 0–100
         style={{ width: 400, height: 400 }}
       />
     </div>
@@ -112,12 +117,12 @@ function ScrollLottie({ className, animationData }) {
 function FeatureSection({ title, desc, lottieUrl, reverse }) {
   return (
     <div
-      className={`container mx-auto max-w-screen-lg bg-[#FAFAFA] flex flex-col md:flex-row items-center py-14 gap-8 ${reverse ? "md:flex-row-reverse" : ""
+      className={`container mx-auto max-w-screen-lg bg-[#FAFAFA] flex flex-col md:flex-row items-center py-14 gap-0 ${reverse ? "md:flex-row-reverse" : ""
         }`}
     >
       {/* Kolom 1 - Lottie */}
-      <div className="flex justify-center md:w-1/2 w-full">
-        <div className="w-[300px] h-[300px] md:w-[450px] md:h-[450px]">
+      <div className="flex justify-center md:w-1/2">
+        <div className="w-[450px] h-[450px] md:w-[450px] md:h-[450px]">
           <LottieWithVisibility
             src={lottieUrl}
             loop
@@ -128,7 +133,7 @@ function FeatureSection({ title, desc, lottieUrl, reverse }) {
       </div>
 
       {/* Kolom 2 - Teks */}
-      <div className="md:w-1/2 w-full text-center md:text-left px-4">
+      <div className="md:w-1/2 text-left">
         <h2 className="text-3xl md:text-[2.75rem] font-fredoka text-[#ffbb00] mb-4 leading-snug tracking-wider">
           {title}
         </h2>
@@ -141,13 +146,13 @@ function FeatureSection({ title, desc, lottieUrl, reverse }) {
 export default function Home() {
   const router = useRouter();
   return (
-    <main className="w-full min-h-screen flex flex-col bg-[#FAFAFA]">
+    <main className="w-full min-h-screen flex flex-col bg-[#FAFAFA] px-4 sm:px-0">
       {/* Hero Section */}
-      <section className="w-full min-h-screen flex flex-col items-center justify-center p-4">
-        <div className="container mx-auto max-w-screen-lg grid md:grid-cols-2 gap-8 items-center flex-1">
+      <section className="w-full min-h-screen flex flex-col items-center justify-center">
+        <div className="container mx-auto max-w-screen-lg grid md:grid-cols-2 gap-0 items-center flex-1">
           {/* Kiri - Lottie */}
-          <div className="flex justify-center md:justify-end md:pr-4 order-1 md:order-none">
-            <div className="w-[300px] h-[300px] md:w-[500px] md:h-[500px]">
+          <div className="flex justify-end md:pr-4">
+            <div className="w-[450px] h-[450px] md:w-[500px] md:h-[500px]">
               <LottieWithVisibility
                 src="https://lottie.host/9d11a902-ea15-4ae0-a23c-3a970aef3763/0r3Cgea1po.lottie"
                 loop
@@ -157,11 +162,11 @@ export default function Home() {
           </div>
 
           {/* Kanan - Teks + Button */}
-          <div className="text-center md:text-left md:pl-4 order-2 md:order-none">
+          <div className="text-left md:pl-4">
             <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-6 leading-snug">
               Cara seru dan efektif <br /> belajar bahasa isyarat!
             </h1>
-            <div className="flex flex-col gap-4 max-w-sm mx-auto md:mx-0">
+            <div className="flex flex-col gap-4 max-w-sm">
               <button
                 type="button"
                 onClick={() => router.push("/auth/register")}
@@ -182,7 +187,7 @@ export default function Home() {
 
         {/* Separator bawah hero */}
         <div className="w-full border-t border-b border-gray-300 mt-10 py-3">
-          <div className="container mx-auto max-w-screen-lg flex flex-col sm:flex-row justify-between items-center text-gray-700 font-semibold px-4">
+          <div className="container mx-auto max-w-screen-lg flex justify-between text-gray-700 font-semibold">
             <span>BISINDO</span>
             <span>SIBI</span>
           </div>
@@ -190,7 +195,7 @@ export default function Home() {
       </section>
 
       {/* Feature Sections */}
-      <section className="w-full flex flex-col bg-[#FAFAFA]">
+      <section className="w-full flex flex-col bg-[#FAFAFA] ">
         <FeatureSection
           title="gratis. seru. inklusif."
           desc="Belajar bahasa isyarat di MAUNA itu mudah dan menyenangkan! Dengan latihan singkat, kamu bisa menguasai gerakan dasar, menambah kosakata, dan berkomunikasi lebih inklusif setiap harinya."
@@ -219,7 +224,7 @@ export default function Home() {
       </section>
 
       {/* 🔥 Scroll-based Animation */}
-      <section className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-b from-[#FAFAFA] to-[#f3faf8] p-4">
+      <section className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-b from-[#FAFAFA] to-[##f3faf8] px-4">
         <div className="text-center max-w-2xl">
           <h2 className="text-4xl md:text-5xl font-fredoka font-bold text-[#ffbb00] mb-0 leading-tight">
             Kapan pun, di mana pun ✨
@@ -234,10 +239,10 @@ export default function Home() {
       </section>
 
       {/* 👯 Belajar Bareng Section */}
-      <section className="w-full bg-[#f8cf09]">
+      <section className="w-full bg-[#f8cf09] ">
         <div className="container mx-auto max-w-screen-lg flex flex-col md:flex-row items-center py-20 px-6 gap-10">
           {/* Kiri - Lottie */}
-          <div className="flex justify-center md:w-1/2 w-full">
+          <div className="flex justify-center md:w-1/2">
             <div className="w-[350px] h-[350px] md:w-[400px] md:h-[400px]">
               <DotLottieReact
                 src="https://lottie.host/0efcba23-29a8-4185-9a80-9e41d406d3c5/CJ4XTCxGPj.lottie"
@@ -248,7 +253,7 @@ export default function Home() {
           </div>
 
           {/* Kanan - Teks */}
-          <div className="md:w-1/2 w-full text-center md:text-left px-4">
+          <div className="md:w-1/2 text-center md:text-left">
             <h2 className="text-3xl md:text-5xl font-fredoka font-bold text-gray-800 mb-6 leading-snug">
               Belajar bareng dengan Mauna
             </h2>
@@ -266,6 +271,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-    </main>
-  );
+    </main>
+  );
 }
