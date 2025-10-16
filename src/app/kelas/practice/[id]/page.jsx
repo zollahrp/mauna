@@ -285,7 +285,7 @@ export default function PracticePage() {
             <div className="space-y-6">
               <div className="flex justify-center">
                 <img
-                  src={`${question.image_url}`}
+                  src={`${process.env.NEXT_PUBLIC_API_URL}/storage/${question.image_url}`}
                   alt="Gambar isyarat"
                   className="rounded-xl border w-48 h-48 object-cover shadow-sm"
                 />
@@ -314,11 +314,11 @@ export default function PracticePage() {
                     key={dict.id}
                     className="border rounded-xl overflow-hidden hover:shadow-md transition-all"
                     onClick={() =>
-                      handleAnswer(`${dict.image_url_ref}` === question.answer)
+                      handleAnswer(`${process.env.NEXT_PUBLIC_API_URL}/storage/${dict.image_url_ref}` === question.answer)
                     }
                   >
                     <img
-                      src={`${dict.image_url_ref || "/images/default.jpg"}`}
+                      src={`${process.env.NEXT_PUBLIC_API_URL}/storage/${dict.image_url_ref || "/images/default.jpg"}`}
                       alt={dict.word_text}
                       className="w-full h-32 object-cover"
                     />
