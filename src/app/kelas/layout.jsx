@@ -82,7 +82,7 @@ export default function KelasLayout({ children }) {
                       ? `${Math.max(3 - completedSublevels, 0)} pelajaran lagi`
                       : "3 pelajaran lagi"}
                   </span>{" "}
-                  untuk mulai berkompetisi. Semangat, kamu pasti bisa! 💪
+                  untuk mulai berkompetisi. Semangat, kamu pasti bisa!
                 </>
               )}
             </p>
