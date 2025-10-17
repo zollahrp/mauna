@@ -143,13 +143,12 @@ export default function JourneyPage() {
               {/* Status Badge & Skip Button */}
               <div className="shrink-0 flex flex-col items-end gap-2">
                 <span
-                  className={`px-4 py-1.5 text-sm font-medium rounded-full shadow-sm transition-all ${
-                    isUnlockedLevel
+                  className={`px-4 py-1.5 text-sm font-medium rounded-full shadow-sm transition-all ${isUnlockedLevel
                       ? lvl?.is_level_completed
                         ? "bg-green-100 text-green-700 border border-green-200"
                         : "bg-yellow-100 text-yellow-700 border border-yellow-200"
                       : "bg-gray-100 text-gray-500 border border-gray-200"
-                  }`}
+                    }`}
                 >
                   {isUnlockedLevel
                     ? lvl?.is_level_completed
@@ -170,17 +169,16 @@ export default function JourneyPage() {
             </div>
 
             {/* === Sublevel Grid === */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 justify-items-center">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 justify-items-center">
               {lvl.sublevels.map((sub) => {
                 const isUnlocked = sub.is_unlocked;
                 return (
                   <div
                     key={sub.sublevel_id}
-                    className={`relative flex flex-col items-center justify-center rounded-2xl border transition-all w-32 h-36 bg-white shadow-sm hover:shadow-md ${
-                      isUnlocked
+                    className={`relative flex flex-col items-center justify-center rounded-2xl border transition-all w-32 h-36 bg-white shadow-sm hover:shadow-md ${isUnlocked
                         ? "border-[#ffbb00] cursor-pointer hover:-translate-y-1 hover:shadow-lg"
                         : "border-gray-200 opacity-60"
-                    }`}
+                      }`}
                     onClick={async () => {
                       if (isUnlocked) {
                         try {
@@ -204,16 +202,14 @@ export default function JourneyPage() {
                     }}
                   >
                     <span
-                      className={`text-xs font-medium mb-1 text-center ${
-                        isUnlocked ? "text-gray-700" : "text-gray-400"
-                      }`}
+                      className={`text-xs font-medium mb-1 text-center ${isUnlocked ? "text-gray-700" : "text-gray-400"
+                        }`}
                     >
                       {sub.sublevel_name}
                     </span>
                     <span
-                      className={`text-2xl font-bold ${
-                        isUnlocked ? "text-gray-900" : "text-gray-400"
-                      }`}
+                      className={`text-2xl font-bold ${isUnlocked ? "text-gray-900" : "text-gray-400"
+                        }`}
                     >
                       {sub.sublevel_id}
                     </span>

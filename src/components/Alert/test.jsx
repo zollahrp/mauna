@@ -1,321 +1,412 @@
-"use client"
+"use client";
 
-import { useEffect, useMemo, useRef, useState } from "react"
-import { useRouter } from "next/navigation"
-import { Lock, Star, Zap } from "lucide-react"
-import toast from "react-hot-toast"
+import { useEffect, useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import SibiAlphabetQuizCamera from "@/components/camera/SibiAlphabetQuizCamera";
+import SibiNumberQuizCamera from "@/components/camera/SibiNumberQuizCamera";
+import SibiSpellingQuizCamera from "@/components/camera/SibiSpellingQuizCamera";
+import api from "@/lib/axios";
+import { useRouter, useParams } from "next/navigation";
 
-const LEVEL_COLORS = {
-  Beginner: "#32cd32",
-  Elementary: "#00bfff",
-  Intermediate: "#ffbb00",
-  Advanced: "#ff4d4f",
+
+// 🔹 Helper untuk mengambil opsi acak selain jawaban benar
+function getRandomOptions(dictionaryList, correctId, count = 3) {
+  const filtered = dictionaryList.filter((d) => d.id !== correctId);
+  const shuffled = filtered.sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, count);
 }
 
-export default function JourneyPage() {
-  const router = useRouter()
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [startingId, setStartingId] = useState(null)
-  const [skippingLevelId, setSkippingLevelId] = useState(null)
-  const levelRefs = useRef([])
+export default function PracticePage() {
+  const [quiz, setQuiz] = useState(null);
+  const [dictionaryList, setDictionaryList] = useState([]);
+  const [idx, setIdx] = useState(0);
+  const [tries, setTries] = useState(0);
+  const [correct, setCorrect] = useState(0);
+  const [finished, setFinished] = useState(false);
+  const [flashColor, setFlashColor] = useState(null); // ✅ bisa 'green' atau 'red'
+  const router = useRouter();
 
-  const fetchWithToken = async (url, options = {}) => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
-    const headers = {
-      "Content-Type": "application/json",
-      ...options.headers,
-    }
-    if (token) {
-      headers.Authorization = `Bearer ${token}`
-    }
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    })
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`)
-    }
-    return response.json()
-  }
 
+  const params = useParams();
+  const { id } = params; // Ambil id dari URL
+
+  // 🔹 Ambil quiz dan kamus
   useEffect(() => {
-    let cancelled = false
-    const fetchProgress = async () => {
+    const quizData = localStorage.getItem("quiz_skip");
+    if (quizData) {
+      const parsed = JSON.parse(quizData);
+      setQuiz(parsed.data || parsed);
+    }
+
+    async function fetchDictionary() {
       try {
-        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
-        if (!token) return
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
-        const res = await fetchWithToken(`${baseUrl}/api/user/soal/user/progress/summary`)
-        if (!cancelled) setData(res)
-      } catch {
-        if (!cancelled) {
-          setData(null)
-          toast.error("Gagal mengambil data progress")
+        const res = await api.get("/public/kamus");
+        if (res.data?.success && Array.isArray(res.data.data)) {
+          setDictionaryList(res.data.data);
         }
-      } finally {
-        if (!cancelled) setLoading(false)
+      } catch { }
+    }
+    fetchDictionary();
+  }, []);
+
+
+  const total = quiz?.total_questions || 0;
+  const question = quiz?.questions?.[idx];
+  const currentQuestionType = question?.tipe_soal;
+
+  const dictionaryItem = useMemo(() => {
+    if (!dictionaryList.length || !question) return null;
+    return dictionaryList.find((d) => d.id === question.dictionary_id);
+  }, [dictionaryList, question]);
+
+  const options = useMemo(() => {
+    if (!dictionaryList.length || !question) return [];
+    const correctDict = dictionaryList.find((d) => d.id === question.dictionary_id);
+    const randomOptions = getRandomOptions(dictionaryList, question.dictionary_id, 3);
+    const allOptions = [...randomOptions, correctDict].filter(Boolean);
+    return allOptions.sort(() => 0.5 - Math.random());
+  }, [dictionaryList, question]);
+
+  // ✅ Flash sesuai hasil jawaban
+  function handleAnswer(isCorrect) {
+    if (isCorrect) {
+      setCorrect((c) => c + 1);
+      setFlashColor("green");
+
+      // ✅ kalau benar, next seperti biasa
+      setTimeout(() => {
+        setFlashColor(null);
+        if (idx + 1 < total) {
+          setIdx(idx + 1);
+          setTries(0);
+        } else {
+          setFinished(true);
+        }
+      }, 400);
+    } else {
+      setFlashColor("red");
+
+      // 🔹 khusus untuk kamera: JANGAN langsung next
+      if (currentQuestionType === "OPEN_CAMERA") {
+        setTimeout(() => setFlashColor(null), 400);
+        return; // stop di sini biar user bisa coba lagi
       }
-    }
-    fetchProgress()
-    return () => {
-      cancelled = true
-    }
-  }, [])
 
-  const levels = useMemo(() => {
-    if (!data?.progress_by_level) return []
-    return Object.entries(data.progress_by_level)
-  }, [data])
-
-  if (loading) {
-    return (
-      <div className="min-h-[60vh] grid place-items-center">
-        <div className="text-center space-y-3">
-          <div className="inline-block">
-            <div className="w-12 h-12 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
-          </div>
-          <p className="text-gray-600 font-medium">Memuat data level...</p>
-        </div>
-      </div>
-    )
+      // 🔹 selain kamera, tetap lanjut ke soal berikutnya
+      setTimeout(() => {
+        setFlashColor(null);
+        if (idx + 1 < total) {
+          setIdx(idx + 1);
+          setTries(0);
+        } else {
+          setFinished(true);
+        }
+      }, 400);
+    }
   }
 
-  if (!data) {
+  function handleSkip() {
+    setFlashColor("red");
+
+    setTimeout(() => {
+      setFlashColor(null);
+      if (idx + 1 < total) {
+        setIdx(idx + 1);
+        setTries(0);
+      } else {
+        setFinished(true);
+      }
+    }, 400);
+  }
+
+
+
+
+  // 🔹 Kirim hasil ke backend
+  useEffect(() => {
+    async function kirimHasil() {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+        const result = {
+          sublevel_id: 0, // skip tidak pakai sublevel
+          correct_answers: correct,
+          total_score: correct * 10,
+          total_questions: total,
+        };
+        // Gunakan id dari params, bukan dari quiz
+        await api.post(`/api/user/soal/level/${id}/skip`, result, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } catch { }
+    }
+    if (finished && quiz) kirimHasil();
+  }, [finished, quiz, correct, total, id]);
+
+
+  if (!quiz || !question) {
     return (
-      <div className="min-h-[60vh] grid place-items-center">
-        <div className="text-center space-y-2">
-          <p className="text-gray-500 text-lg">Tidak ada data level ditemukan.</p>
-        </div>
+      <div className="min-h-[60vh] flex items-center justify-center text-gray-500 text-lg">
+        Quiz tidak ditemukan.
       </div>
-    )
+    );
+  }
+
+  if (finished) {
+    const safeCorrect = Math.min(correct, total);
+    const result = {
+      sublevel_id: quiz?.sublevel_id,
+      correct_answers: safeCorrect,
+      total_score: safeCorrect * 10,
+      total_questions: total,
+    };
+
+    async function handleFinishQuiz() {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+        await api.post(`/api/user/soal/sublevel/${quiz?.sublevel_id}/finish`, result, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        router.push("/kelas");
+      } catch { }
+    }
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="min-h-[80vh] flex flex-col items-center justify-center px-6"
+      >
+        <div className="max-w-md w-full text-center space-y-6 bg-white shadow-xl rounded-2xl p-10 border border-gray-100">
+          <h2 className="text-3xl font-semibold text-gray-900 tracking-tight">
+            Hasil Kuis
+          </h2>
+
+          <div className="space-y-2">
+            <p className="text-gray-600">
+              Jawaban benar:
+              <span className="ml-1 font-semibold text-gray-900">
+                {result.correct_answers} / {result.total_questions}
+              </span>
+            </p>
+            <p className="text-lg font-medium text-gray-800">
+              Skor Akhir:{" "}
+              <span className="text-[#ffbb00] font-bold">
+                {result.total_score}
+              </span>
+            </p>
+          </div>
+
+          <div className="pt-4">
+            <button
+              className="w-full py-3 rounded-xl bg-[#ffbb00] text-white font-medium tracking-wide hover:bg-[#e5a800] transition-all shadow-sm"
+              onClick={() => router.push("/kelas")}
+            >
+              Kembali ke Kelas
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 px-2 sm:px-4 md:px-8 py-4 md:py-10">
-      <div className="space-y-10 md:space-y-16 max-w-6xl mx-auto">
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-6">
-          {[
-            {
-              label: "Sublevel",
-              value: `${data.overall_summary.completed_sublevels} / ${data.overall_summary.total_sublevels}`,
-              icon: "📚",
-              color: "from-blue-500 to-blue-600",
-            },
-            {
-              label: "Rata-rata Skor",
-              value: `${Number(data.overall_summary.average_score).toFixed(1)}%`,
-              icon: "📊",
-              color: "from-purple-500 to-purple-600",
-            },
-            {
-              label: "Total Bintang",
-              value: data.overall_summary.total_stars,
-              icon: "⭐",
-              color: "from-yellow-500 to-yellow-600",
-            },
-            {
-              label: "Tingkat Selesai",
-              value: `${Number(data.overall_summary.completion_rate).toFixed(1)}%`,
-              icon: "🎯",
-              color: "from-green-500 to-green-600",
-            },
-          ].map((item, i) => (
-            <div
-              key={i}
-              className={`rounded-2xl bg-gradient-to-br ${item.color} p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-white`}
-            >
-              <div className="text-2xl md:text-3xl mb-2">{item.icon}</div>
-              <p className="text-white/80 font-medium text-xs md:text-sm mb-1">{item.label}</p>
-              <p className="font-extrabold text-xl md:text-2xl">{item.value}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Level Sections */}
-        {levels.map(([name, lvl], idx) => {
-          const bannerColor = LEVEL_COLORS[name] ?? "#ccc"
-          const isUnlockedLevel = !!lvl?.is_level_unlocked
-          const total = Number(lvl?.total_sublevels || 0)
-          const completed = Number(lvl?.completed || 0)
-          const starsCount = Number(lvl?.total_stars || 0)
-          const canSkip = !isUnlockedLevel
-          const progressPercent = total > 0 ? (completed / total) * 100 : 0
-
-          return (
-            <section
-              key={String(lvl?.level_id || name)}
-              className="space-y-6 md:space-y-8"
-              ref={(el) => (levelRefs.current[idx] = el)}
-            >
-              <div className="rounded-3xl border-2 border-gray-100 bg-gradient-to-r from-white via-gray-50 to-white shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden">
-                {/* Progress bar at top */}
-                <div className="h-1 bg-gray-200">
-                  <div
-                    className="h-full transition-all duration-500"
-                    style={{
-                      width: `${progressPercent}%`,
-                      backgroundColor: bannerColor,
-                    }}
-                  ></div>
-                </div>
-
-                <div className="px-2 sm:px-4 md:px-8 py-4 md:py-7 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-6">
-                  {/* Left Section */}
-                  <div className="flex flex-col md:flex-row items-start md:items-center gap-3 md:gap-6 flex-1 w-full">
-                    {/* Level Badge */}
-                    <div
-                      className="w-12 h-12 md:w-16 md:h-16 flex items-center justify-center rounded-2xl text-white font-bold text-xl md:text-2xl shadow-lg transform hover:scale-110 transition-transform duration-300 flex-shrink-0"
-                      style={{
-                        backgroundColor: bannerColor,
-                      }}
-                    >
-                      {name.charAt(0)}
-                    </div>
-                    {/* Level Info */}
-                    <div className="flex-1">
-                      <h2 className="text-lg md:text-2xl font-bold text-gray-900 mb-2">{name}</h2>
-                      <div className="flex flex-wrap gap-2 md:gap-4 text-xs md:text-base">
-                        <div className="flex items-center gap-1 md:gap-2">
-                          <span className="text-gray-600">Sublevel:</span>
-                          <span className="font-bold text-gray-900 bg-gray-100 px-2 md:px-3 py-1 rounded-full">
-                            {completed}/{total}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1 md:gap-2">
-                          <span className="text-gray-600">Bintang:</span>
-                          <span className="font-bold text-yellow-600 bg-yellow-50 px-2 md:px-3 py-1 rounded-full flex items-center gap-1">
-                            ⭐ {starsCount}/{total * 3}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Right Section - Status & Skip Button */}
-                  <div className="flex flex-col items-end gap-2 md:gap-3 flex-shrink-0">
-                    <span
-                      className={`px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-bold rounded-full shadow-md transition-all inline-block ${
-                        isUnlockedLevel
-                          ? lvl?.is_level_completed
-                            ? "bg-gradient-to-r from-green-100 to-green-50 text-green-700 border-2 border-green-300"
-                            : "bg-gradient-to-r from-amber-100 to-amber-50 text-amber-700 border-2 border-amber-300"
-                          : "bg-gradient-to-r from-gray-100 to-gray-50 text-gray-600 border-2 border-gray-300"
-                      }`}
-                    >
-                      {isUnlockedLevel ? (lvl?.is_level_completed ? "✓ Selesai" : "⏳ Belum Selesai") : "🔒 Terkunci"}
-                    </span>
-
-                    {canSkip && (
-                      <button
-                        disabled={skippingLevelId === lvl.level_id}
-                        className="px-4 md:px-5 py-2 text-xs md:text-sm font-bold rounded-full shadow-lg transition-all flex items-center gap-2 bg-gradient-to-r from-emerald-400 to-emerald-500 hover:from-emerald-500 hover:to-emerald-600 text-white hover:shadow-xl active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 duration-200"
-                        title="Lewati semua sublevel di level ini"
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          try {
-                            setSkippingLevelId(lvl.level_id);
-                            const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-                            await fetchWithToken(`${baseUrl}/api/user/soal/level/${lvl.level_id}/skip-quiz`, {
-                              method: "POST",
-                            });
-                            toast.success("Berhasil skip level! 🎉");
-                            setLoading(true);
-                            const res = await fetchWithToken(`${baseUrl}/api/user/soal/user/progress/summary`);
-                            setData(res);
-                          } catch {
-                            toast.error("Gagal skip level. Coba lagi.");
-                          } finally {
-                            setSkippingLevelId(null);
-                          }
-                        }}
-                        type="button"
-                      >
-                        <Zap size={18} />
-                        Skip Level
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Responsive Sublevel Grid */}
-              <div className="w-full overflow-x-auto">
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-6 min-w-[320px]">
-                  {lvl.sublevels.map((sub, subIdx) => {
-                    const isUnlocked = sub.is_unlocked;
-                    const isCompleted = sub.is_completed;
-
-                    return (
-                      <div
-                        key={sub.sublevel_id}
-                        className={`relative flex flex-col items-center justify-center rounded-2xl border-2 transition-all duration-300 w-full aspect-square max-w-[140px] mx-auto shadow-md hover:shadow-lg transform ${
-                          isUnlocked
-                            ? "border-blue-300 bg-gradient-to-br from-blue-50 to-white cursor-pointer hover:-translate-y-2 hover:border-blue-500"
-                            : "border-gray-200 bg-gray-50 opacity-50"
-                        } ${isCompleted ? "ring-2 ring-green-400 ring-offset-2" : ""}`}
-                        onClick={async () => {
-                          if (isUnlocked) {
-                            try {
-                              setStartingId(sub.sublevel_id);
-                              const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-                              const res = await fetchWithToken(
-                                `${baseUrl}/api/user/soal/sublevel/${sub.sublevel_id}/start`,
-                              );
-                              if (res?.data) {
-                                localStorage.setItem("current_quiz", JSON.stringify(res.data));
-                                router.push(`/kelas/practice/${sub.sublevel_id}`);
-                              } else {
-                                toast.error("Quiz tidak ditemukan.");
-                              }
-                            } catch {
-                              toast.error("Gagal memulai sublevel. Coba lagi.");
-                            } finally {
-                              setStartingId(null);
-                            }
-                          }
-                        }}
-                      >
-                        <span
-                          className={`text-xs md:text-sm font-semibold mb-2 text-center px-2 ${
-                            isUnlocked ? "text-gray-700" : "text-gray-400"
-                          }`}
-                        >
-                          {sub.sublevel_name}
-                        </span>
-                        <span className={`text-2xl md:text-3xl font-black mb-2 ${isUnlocked ? "text-gray-900" : "text-gray-400"}`}>
-                          {sub.sublevel_id}
-                        </span>
-                        <div className="flex gap-1 mb-2">
-                          {Array.from({ length: 3 }).map((_, i) => (
-                            <Star
-                              key={i}
-                              size={16}
-                              className={i < sub.stars ? "text-yellow-400" : "text-gray-300"}
-                              fill={i < sub.stars ? "#facc15" : "none"}
-                            />
-                          ))}
-                        </div>
-                        {isCompleted && (
-                          <div className="absolute top-2 right-2 bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
-                            ✓
-                          </div>
-                        )}
-                        {!isUnlocked && (
-                          <div className="absolute inset-0 bg-black/30 flex items-center justify-center rounded-2xl z-10">
-                            <Lock size={32} className="text-white" />
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </section>
-          )
-        })}
+    <motion.section
+      className="max-w-3xl mx-auto px-6 py-12 rounded-xl"
+      animate={
+        flashColor
+          ? {
+            backgroundColor:
+              flashColor === "green"
+                ? ["#ffffff", "#dcfce7", "#ffffff"] // 💚 hijau ketika benar
+                : ["#ffffff", "#fee2e2", "#ffffff"], // ❤️ merah ketika salah
+          }
+          : {}
+      }
+      transition={{ duration: 0.4 }}
+    >
+      {/* Progress Bar */}
+      <div className="w-full bg-gray-200 rounded-full h-2 mb-8">
+        <motion.div
+          className="bg-[#ffbb00] h-2 rounded-full"
+          initial={{ width: 0 }}
+          animate={{ width: `${((idx + 1) / total) * 100}%` }}
+          transition={{ duration: 0.4 }}
+        />
       </div>
-    </div>
-  )
+
+      {/* Header */}
+      <div className="flex items-center justify-between mb-10">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">{quiz.sublevel_name}</h1>
+          <p className="text-sm text-gray-500">{quiz.level_name}</p>
+        </div>
+        <div className="text-sm font-medium text-gray-600">
+          Soal {idx + 1} / {total}
+        </div>
+      </div>
+
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={idx}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.3 }}
+          className="space-y-8"
+        >
+          <p className="text-xl font-semibold text-gray-900 leading-relaxed">
+            {question.question}
+          </p>
+
+          {/* Kamera */}
+          {currentQuestionType === "OPEN_CAMERA" && (
+            <div className="space-y-4">
+              <div className="border rounded-xl p-5 bg-gray-50 shadow-sm">
+                <p className="text-sm text-gray-700">
+                  Target:{" "}
+                  <span className="font-semibold text-gray-900">
+                    {question.dictionary_word}
+                  </span>
+                </p>
+                <p className="text-sm text-gray-500">{question.dictionary_definition}</p>
+              </div>
+
+              {(question.dictionary_category === "ALPHABET") && (
+                <SibiAlphabetQuizCamera
+                  targetWord={question.dictionary_word}
+                  onFinish={() => handleAnswer(true)}
+                  onWrong={() => handleAnswer(false)}
+                />
+              )}
+              {question.dictionary_category === "KOSAKATA" && (
+                <SibiSpellingQuizCamera
+                  targetWord={question.dictionary_word}
+                  onFinish={() => handleAnswer(true)}
+                  onWrong={() => handleAnswer(false)}
+                />
+              )}
+              {question.dictionary_category === "NUMBERS" && (
+                <SibiNumberQuizCamera
+                  targetAnswer={question.answer}
+                  onFinish={() => handleAnswer(true)}
+                  onWrong={() => handleAnswer(false)}
+                />
+              )}
+            </div>
+          )}
+
+          {currentQuestionType === "TEBAK_GAMBAR" && (
+            <div className="space-y-6">
+              <div className="flex justify-center">
+                <img
+                  src={`${process.env.NEXT_PUBLIC_API_URL}/storage/${question.image_url}`}
+                  alt="Gambar isyarat"
+                  className="rounded-xl border w-48 h-48 object-cover shadow-sm"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                {options.map((dict) => (
+                  <button
+                    key={dict.id}
+                    className="rounded-xl border border-gray-300 py-3 px-4 text-gray-800 font-semibold hover:border-[#ffbb00] hover:bg-[#fff5d1] transition-all shadow-sm"
+                    onClick={() => handleAnswer(dict.word_text === question.answer)}
+                  >
+                    {dict.word_text}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Pilihan Ganda */}
+          {currentQuestionType === "PILIHAN_GANDA" && (
+            <div className="grid grid-cols-2 gap-4">
+              {options.map((dict) => {
+                const isAnswerImage = question.answer && question.answer.startsWith("kamus/");
+                const isAnswerVideo = question.answer && question.answer.includes(".webm");
+                if (isAnswerImage) {
+                  return (
+                    <button
+                      key={dict.id}
+                      className="border rounded-xl overflow-hidden hover:shadow-md transition-all"
+                      onClick={() =>
+                        handleAnswer(`${process.env.NEXT_PUBLIC_API_URL}/storage/${dict.image_url_ref}` === `${process.env.NEXT_PUBLIC_API_URL}/storage/${question.answer}`)
+                      }
+                    >
+                      <img
+                        src={`${process.env.NEXT_PUBLIC_API_URL}/storage/${dict.image_url_ref || "/images/default.jpg"}`}
+                        alt={dict.word_text}
+                        className="w-full h-32 object-cover"
+                      />
+                    </button>
+                  );
+                } else if (isAnswerVideo) {
+                  return (
+                    <button
+                      key={dict.id}
+                      className="border rounded-xl overflow-hidden hover:shadow-md transition-all flex flex-col items-center"
+                      onClick={() =>
+                        handleAnswer(question.dictionary_video_url === question.answer)
+                      }
+                    >
+                      <video
+                        src={question.dictionary_video_url}
+                        loop
+                        autoPlay
+                        muted
+                        className="w-full h-32 object-fit"
+                      />
+                      <span className="mt-2 text-sm text-gray-700">{dict.word_text}</span>
+                    </button>
+                  );
+                } else {
+                  return (
+                    <button
+                      key={dict.id}
+                      className="rounded-xl border border-gray-300 py-3 px-4 text-gray-800 font-medium hover:border-[#ffbb00] hover:bg-[#fff5d1] transition-all shadow-sm"
+                      onClick={() =>
+                        handleAnswer(dict.definition === question.answer)
+                      }
+                    >
+                      {dict.definition}
+                    </button>
+                  );
+                }
+              })}
+            </div>
+          )}
+          {currentQuestionType === "MATEMATIKA" && (
+            <div className="space-y-4">
+              <h2 className="text-4xl font-bold text-center text-gray-900">
+                {question.question}
+              </h2>
+              <SibiNumberQuizCamera
+                targetAnswer={question.answer}
+                onFinish={() => handleAnswer(true)}
+                onWrong={() => handleAnswer(false)}
+              />
+            </div>
+          )}
+
+          {/* Tombol */}
+          <div className="pt-6 flex gap-4">
+            {/* <button
+              className="flex-1 py-3 rounded-xl bg-[#ffbb00] text-white font-semibold hover:bg-[#e5a800] transition-all shadow-sm"
+              onClick={() => handleAnswer(false)}
+            >
+              Selesai
+            </button> */}
+            <button
+              className="flex-1 py-3 rounded-xl border border-gray-300 text-gray-800 font-semibold hover:border-[#ffbb00] hover:bg-[#fff5d1] transition-all shadow-sm"
+              onClick={handleSkip}
+            >
+              Skip Soal
+            </button>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    </motion.section>
+  );
 }
