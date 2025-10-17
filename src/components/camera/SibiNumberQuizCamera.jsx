@@ -30,39 +30,70 @@ useEffect(() => {
   if (typeof window === "undefined" || isHandsLoaded.current) return;
   isHandsLoaded.current = true;
 
+  let isMounted = true;
+
   const loadScript = (src) => {
     return new Promise((resolve, reject) => {
+      // Check if script already exists
+      const existingScript = document.querySelector(`script[src="${src}"]`);
+      if (existingScript) {
+        if (existingScript.getAttribute('data-loaded') === 'true') {
+          resolve();
+          return;
+        }
+        // Wait for existing script to load
+        existingScript.addEventListener('load', resolve);
+        existingScript.addEventListener('error', reject);
+        return;
+      }
+
       const script = document.createElement("script");
       script.src = src;
-      script.onload = resolve;
-      script.onerror = reject;
+      script.crossOrigin = "anonymous";
+      script.onload = () => {
+        script.setAttribute('data-loaded', 'true');
+        console.log(`✅ Loaded: ${src}`);
+        resolve();
+      };
+      script.onerror = (err) => {
+        console.error(`❌ Failed to load: ${src}`, err);
+        reject(err);
+      };
       document.head.appendChild(script);
     });
   };
 
-  const loadMediaPipe = async () => {
-    // pastikan urutan loading
-    await loadScript("https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js");
-    await loadScript("https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js");
-  };
-
   const init = async () => {
     try {
-      await loadMediaPipe();
-      await new Promise((r) => setTimeout(r, 200)); // ⏱ delay 200ms biar wasm siap
-
-      if (!window.Hands) {
-        console.error("MediaPipe Hands belum siap");
-        isHandsLoaded.current = false;
-        return;
+      // Load scripts with proper order
+      console.log("📦 Loading MediaPipe scripts...");
+      await loadScript("https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js");
+      await loadScript("https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4/hands.js");
+      
+      // Wait for global objects to be available
+      let attempts = 0;
+      while ((!window.Hands || !window.Camera) && attempts < 50) {
+        await new Promise(r => setTimeout(r, 100));
+        attempts++;
       }
 
+      if (!isMounted) return;
+
+      if (!window.Hands || !window.Camera) {
+        throw new Error("MediaPipe tidak dapat dimuat setelah 5 detik");
+      }
+
+      console.log("✅ MediaPipe loaded, initializing Hands...");
+
       const hands = new window.Hands({
-        locateFile: (file) =>
-          `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/${file}`,
+        locateFile: (file) => {
+          const url = `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4/${file}`;
+          console.log(`🔗 Loading: ${url}`);
+          return url;
+        },
       });
 
-      hands.setOptions({
+      await hands.setOptions({
         maxNumHands: 1,
         modelComplexity: 1,
         minDetectionConfidence: 0.7,
@@ -70,41 +101,72 @@ useEffect(() => {
       });
 
       hands.onResults(onResults);
+      
+      if (!isMounted) return;
       handsRef.current = hands;
 
-      // Kamera
+      // Initialize hands properly
+      await hands.initialize();
+      
+      if (!isMounted) return;
+      console.log("✅ Hands initialized");
+
+      // Start camera
       if (videoRef.current) {
         const camera = new window.Camera(videoRef.current, {
           onFrame: async () => {
+            if (!isMounted || !handsRef.current) return;
             try {
-              if (handsRef.current && videoRef.current) {
+              if (videoRef.current && videoRef.current.readyState === 4) {
                 await handsRef.current.send({ image: videoRef.current });
               }
             } catch (err) {
-              console.warn("Mediapipe aborted, skip frame:", err);
+              if (!err.message?.includes('aborted')) {
+                console.warn("⚠️ Frame processing error:", err);
+              }
             }
           },
           width: 400,
           height: 300,
         });
-        camera.start();
+        
+        await camera.start();
+        
+        if (!isMounted) {
+          camera.stop();
+          return;
+        }
+        
         cameraRef.current = camera;
+        console.log("✅ Camera started");
       }
 
-      setIsLoading(false);
+      if (isMounted) {
+        setIsLoading(false);
+      }
     } catch (err) {
-      console.error("Error initializing MediaPipe:", err);
-      setError("Gagal memuat MediaPipe. Coba refresh halaman.");
-      isHandsLoaded.current = false;
-      setIsLoading(false);
+      console.error("❌ Error initializing MediaPipe:", err);
+      if (isMounted) {
+        setError(`Gagal memuat MediaPipe: ${err.message}. Coba refresh halaman.`);
+        isHandsLoaded.current = false;
+        setIsLoading(false);
+      }
     }
   };
 
   init();
 
   return () => {
-    if (cameraRef.current) cameraRef.current.stop();
-    isHandsLoaded.current = false; // bersihkan flag
+    isMounted = false;
+    if (cameraRef.current) {
+      cameraRef.current.stop();
+      cameraRef.current = null;
+    }
+    if (handsRef.current) {
+      handsRef.current.close();
+      handsRef.current = null;
+    }
+    isHandsLoaded.current = false;
   };
 }, []);
 
@@ -188,6 +250,7 @@ useEffect(() => {
         setIsCorrect(true);
         setMessage(`✅ Benar! Jawabannya ${targetAnswer}`);
         
+        cleanupMediaPipe(); // Cleanup resources
         onFinish(); // Langsung panggil onFinish
       } else {
         setMessage(`Tunjukkan jawabannya dengan bahasa isyarat`);
@@ -196,6 +259,28 @@ useEffect(() => {
     } catch (err) {
       console.error("Prediction error:", err);
       setError("Gagal mengirim data ke server. Pastikan backend berjalan.");
+    }
+  };
+
+  // === Cleanup MediaPipe resources ===
+  const cleanupMediaPipe = () => {
+    try {
+      if (cameraRef.current) {
+        cameraRef.current.stop();
+        cameraRef.current = null;
+      }
+      if (handsRef.current) {
+        handsRef.current.close();
+        handsRef.current = null;
+      }
+      if (videoRef.current && videoRef.current.srcObject) {
+        const tracks = videoRef.current.srcObject.getTracks();
+        tracks.forEach(track => track.stop());
+        videoRef.current.srcObject = null;
+      }
+      console.log("MediaPipe resources cleaned up");
+    } catch (err) {
+      console.error("Error cleaning up MediaPipe:", err);
     }
   };
 
