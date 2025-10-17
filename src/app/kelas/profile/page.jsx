@@ -417,7 +417,9 @@ export default function ProfilePage() {
                     }`}
                   title={badge.nama}
                 >
-                  <div className="text-4xl mb-1">🏅</div>
+                  <div className="text-4xl mb-1">
+                    <Image src={`${process.env.NEXT_PUBLIC_API_URL}/storage/${badge.icon}`} alt={badge.nama} width={100} height={100} />
+                  </div>
                   <div className="font-bold text-base">{badge.nama}</div>
                   <div className="text-xs text-gray-600 text-center">
                     {badge.earned_at

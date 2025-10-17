@@ -175,8 +175,16 @@ export default function Sidebar() {
 
       {/* Bottom Navigation Mobile */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 flex justify-around items-center py-2 md:hidden shadow-[0_-2px_6px_rgba(0,0,0,0.05)] font-[var(--font-poppins)]">
-        {mobileMainMenu.map((item) =>
-          item.action === "lainnya" ? (
+        {mobileMainMenu.map((item) => {
+          let isActive = false;
+          if (item.href === "/kelas") {
+            isActive = pathname === "/kelas";
+          } else if (item.href === "/kelas/dictionary") {
+            isActive = pathname.startsWith("/kelas/dictionary");
+          } else if (item.href === "/kelas/leaderboard") {
+            isActive = pathname.startsWith("/kelas/leaderboard");
+          }
+          return item.action === "lainnya" ? (
             <button
               key={item.name}
               onClick={() => setLainnyaOpen(true)}
@@ -190,7 +198,7 @@ export default function Sidebar() {
             <button
               key={item.name}
               onClick={() => router.push(item.href)}
-              className={`flex flex-col items-center gap-2 text-xs ${pathname.startsWith(item.href)
+              className={`flex flex-col items-center gap-2 text-xs ${isActive
                 ? "text-[#ffbb00] font-semibold"
                 : "text-gray-600 hover:text-[#ffbb00]"
                 }`}
@@ -201,13 +209,12 @@ export default function Sidebar() {
                 alt={item.name}
                 width={36}
                 height={36}
-                className={`${pathname.startsWith(item.href) ? "opacity-100" : "opacity-80"
-                  }`}
+                className={`${isActive ? "opacity-100" : "opacity-80"}`}
               />
               <span>{item.name}</span>
             </button>
-          )
-        )}
+          );
+        })}
       </nav>
 
       {/* Panel Lainnya Mobile */}
@@ -219,8 +226,7 @@ export default function Sidebar() {
           onClick={() => setLainnyaOpen(false)}
         >
           <div
-            className="bg-white rounded-t-2xl w-full max-w-md mx-auto p-6 pb-8 shadow-lg
-        animate-lainnyaFadeIn"
+            className="bg-white rounded-t-2xl w-full max-w-full p-6 pb-8 shadow-lg animate-lainnyaFadeIn"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-center mb-4">

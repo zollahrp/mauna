@@ -189,7 +189,7 @@ export default function DictionaryDetail({ params }) {
                   alt={data.word_text}
                   width={1280}
                   height={720}
-                  className="rounded-lg w-full aspect-video object-cover"
+                  className="rounded-lg h-full object-fit"
                   unoptimized
                 />
                 <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition">

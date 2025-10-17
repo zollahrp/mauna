@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import api from "@/lib/axios";
+import Image from "next/image";
 
 const LEVEL_COLORS = {
   easy: "bg-green-100 text-green-700 border-green-300",
@@ -47,7 +48,9 @@ export default function BadgesPage() {
                 className={`border rounded-xl p-4 sm:p-5 flex flex-col items-center gap-2 shadow hover:scale-105 transition-transform duration-200 cursor-pointer ${LEVEL_COLORS[badge.level] || "bg-gray-100 text-gray-700 border-gray-300"}`}
                 title={badge.nama}
               >
-                <div className="text-4xl sm:text-5xl mb-2">{badge.icon}</div>
+                <div className="text-4xl sm:text-5xl mb-2">
+                  <Image src={`${process.env.NEXT_PUBLIC_API_URL}/storage/${badge.icon}`} alt={badge.nama} width={100} height={100} />
+                </div>
                 <div className="font-bold text-base sm:text-lg text-center">{badge.nama}</div>
                 <div className="text-xs sm:text-sm text-gray-600 text-center">{badge.deskripsi}</div>
                 <span className={`mt-2 px-3 py-1 rounded-full text-xs font-semibold border ${LEVEL_COLORS[badge.level]}`}>
