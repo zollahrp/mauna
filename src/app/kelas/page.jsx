@@ -57,6 +57,18 @@ export default function JourneyPage() {
     }
   };
 
+  const skipLevel = async (levelId) => {
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      if (!token) return;
+      await api.post(`/api/user/soal/level/${levelId}/skip-quiz`);
+      toast.success("Level berhasil dilewati");
+      router.push(`/kelas/practice/skip/${levelId}`);
+    } catch {
+      toast.error("Gagal melewati level");
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-[60vh] grid place-items-center text-gray-500 text-sm">
@@ -81,13 +93,9 @@ export default function JourneyPage() {
         const total = Number(lvl?.total_sublevels || 0);
         const completed = Number(lvl?.completed || 0);
         const starsCount = Number(lvl?.total_stars || 0);
-        const prevLevel = levels[idx - 1]?.[1];
-        // Untuk skip button di sublevel pertama level ini
-        const canShowSkipBtn =
-          idx > 0 &&
-          lvl.is_level_unlocked &&
-          prevLevel &&
-          Number(prevLevel.completed) > 0;
+
+        // Tampilkan tombol skip jika unlocked: 0 (is_level_unlocked === false)
+        const showSkipButton = !isUnlockedLevel;
 
         return (
           <section
@@ -120,12 +128,13 @@ export default function JourneyPage() {
               {/* Status Badge & Skip Button */}
               <div className="shrink-0 flex flex-col items-end gap-2">
                 <span
-                  className={`px-4 py-1.5 text-sm font-medium rounded-full shadow-sm transition-all ${isUnlockedLevel
-                    ? lvl?.is_level_completed
-                      ? "bg-green-100 text-green-700 border border-green-200"
-                      : "bg-yellow-100 text-yellow-700 border border-yellow-200"
-                    : "bg-gray-100 text-gray-500 border border-gray-200"
-                    }`}
+                  className={`px-4 py-1.5 text-sm font-medium rounded-full shadow-sm transition-all ${
+                    isUnlockedLevel
+                      ? lvl?.is_level_completed
+                        ? "bg-green-100 text-green-700 border border-green-200"
+                        : "bg-yellow-100 text-yellow-700 border border-yellow-200"
+                      : "bg-gray-100 text-gray-500 border border-gray-200"
+                  }`}
                 >
                   {isUnlockedLevel
                     ? lvl?.is_level_completed
@@ -133,22 +142,30 @@ export default function JourneyPage() {
                       : "Belum Selesai"
                     : "Terkunci"}
                 </span>
+                {showSkipButton && (
+                  <button
+                    className="mt-1 px-4 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold rounded-full shadow transition"
+                    onClick={() => toast.success("Skip Level action!")}
+                    type="button"
+                  >
+                    Skip Level
+                  </button>
+                )}
               </div>
             </div>
 
             {/* === Sublevel Grid === */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 justify-items-center">
-              {lvl.sublevels.map((sub, subIdx) => {
+              {lvl.sublevels.map((sub) => {
                 const isUnlocked = sub.is_unlocked;
-                // Tampilkan tombol skip hanya di sublevel pertama, jika syarat terpenuhi
-                const showSkipBtn = canShowSkipBtn && subIdx === 0;
                 return (
                   <div
                     key={sub.sublevel_id}
-                    className={`relative flex flex-col items-center justify-center rounded-2xl border transition-all w-32 h-36 bg-white shadow-sm hover:shadow-md ${isUnlocked
-                      ? "border-[#ffbb00] cursor-pointer hover:-translate-y-1 hover:shadow-lg"
-                      : "border-gray-200 opacity-60"
-                      }`}
+                    className={`relative flex flex-col items-center justify-center rounded-2xl border transition-all w-32 h-36 bg-white shadow-sm hover:shadow-md ${
+                      isUnlocked
+                        ? "border-[#ffbb00] cursor-pointer hover:-translate-y-1 hover:shadow-lg"
+                        : "border-gray-200 opacity-60"
+                    }`}
                     onClick={async () => {
                       if (isUnlocked) {
                         try {
@@ -172,14 +189,16 @@ export default function JourneyPage() {
                     }}
                   >
                     <span
-                      className={`text-xs font-medium mb-1 text-center ${isUnlocked ? "text-gray-700" : "text-gray-400"
-                        }`}
+                      className={`text-xs font-medium mb-1 text-center ${
+                        isUnlocked ? "text-gray-700" : "text-gray-400"
+                      }`}
                     >
                       {sub.sublevel_name}
                     </span>
                     <span
-                      className={`text-2xl font-bold ${isUnlocked ? "text-gray-900" : "text-gray-400"
-                        }`}
+                      className={`text-2xl font-bold ${
+                        isUnlocked ? "text-gray-900" : "text-gray-400"
+                      }`}
                     >
                       {sub.sublevel_id}
                     </span>
@@ -197,19 +216,6 @@ export default function JourneyPage() {
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center rounded-2xl z-10">
                         <Lock size={28} className="text-white" />
                       </div>
-                    )}
-                    {/* Skip Level Button */}
-                    {showSkipBtn && (
-                      <button
-                        className="absolute bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold rounded-full shadow transition z-20"
-                        onClick={e => {
-                          e.stopPropagation();
-                          router.push(`/level/${lvl.level_id}/skip-quiz`);
-                        }}
-                        type="button"
-                      >
-                        Skip Level
-                      </button>
                     )}
                   </div>
                 );
