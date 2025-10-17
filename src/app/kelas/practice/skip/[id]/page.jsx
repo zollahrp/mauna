@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import SibiAlphabetQuizCamera from "@/components/camera/SibiAlphabetQuizCamera";
 import SibiNumberQuizCamera from "@/components/camera/SibiNumberQuizCamera";
-import SibiKosaKataQuizCamera from "@/components/camera/SibiKosaKataQuizCamera";
+import SibiSpellingQuizCamera from "@/components/camera/SibiSpellingQuizCamera";
 import api from "@/lib/axios";
 import { useRouter } from "next/navigation";
 
@@ -273,7 +273,7 @@ export default function PracticePage() {
                 />
               )}
               {question.dictionary_category === "KOSAKATA" && (
-                <SibiKosaKataQuizCamera
+                <SibiSpellingQuizCamera
                   targetWord={question.dictionary_word}
                   onFinish={() => handleAnswer(true)}
                   onWrong={() => handleAnswer(false)}

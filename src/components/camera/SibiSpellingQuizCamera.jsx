@@ -2,7 +2,7 @@
 import { useRef, useState, useEffect } from "react";
 import api from "@/lib/axios"; // Import axios instance
 
-export default function SibiKosaKataQuizCamera({ targetWord, onFinish, onWrong }) {
+export default function SibiSpellingQuizCamera({ targetWord, onFinish, onWrong }) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [progress, setProgress] = useState(Array(targetWord.length).fill("_"));
     const [message, setMessage] = useState(`Tunjukkan huruf: ${targetWord[0].toUpperCase()}`);

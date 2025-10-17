@@ -340,13 +340,15 @@ export default function PracticePage() {
                       key={dict.id}
                       className="border rounded-xl overflow-hidden hover:shadow-md transition-all flex flex-col items-center"
                       onClick={() =>
-                        handleAnswer(dict.video_url_ref === question.answer)
+                        handleAnswer(question.dictionary_video_url === question.answer)
                       }
                     >
                       <video
-                        src={dict.video_url_ref}
-                        controls
-                        className="w-full h-32 object-cover"
+                        src={question.dictionary_video_url}
+                        loop 
+                        autoPlay 
+                        muted
+                        className="w-full h-32 object-fit"
                       />
                       <span className="mt-2 text-sm text-gray-700">{dict.word_text}</span>
                     </button>
