@@ -61,13 +61,28 @@ export default function JourneyPage() {
     try {
       const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
       if (!token) return;
-      await api.post(`/api/user/soal/level/${levelId}/skip-quiz`);
+      const res = await api.get(`/api/user/soal/level/${levelId}/skip-quiz`, {}, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.data?.data) {
+        localStorage.setItem("quiz_skip", JSON.stringify(res.data.data));
+      }
       toast.success("Level berhasil dilewati");
       router.push(`/kelas/practice/skip/${levelId}`);
     } catch {
-      toast.error("Gagal melewati level");
+      toast.error("Kerjakan satu sublevel terlebih dahulu sebelum melewati.");
     }
   };
+
+  // useEffect untuk menjalankan skipLevel ketika levelId berubah
+  const [skipLevelId, setSkipLevelId] = useState(null);
+
+  useEffect(() => {
+    if (skipLevelId) {
+      skipLevel(skipLevelId);
+      setSkipLevelId(null);
+    }
+  }, [skipLevelId]);
 
   if (loading) {
     return (
@@ -145,7 +160,7 @@ export default function JourneyPage() {
                 {showSkipButton && (
                   <button
                     className="mt-1 px-4 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold rounded-full shadow transition"
-                    onClick={() => toast.success("Skip Level action!")}
+                    onClick={() => setSkipLevelId(lvl?.level_id)}
                     type="button"
                   >
                     Skip Level

@@ -4,8 +4,10 @@ import { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import SibiAlphabetQuizCamera from "@/components/camera/SibiAlphabetQuizCamera";
 import SibiNumberQuizCamera from "@/components/camera/SibiNumberQuizCamera";
+import SibiKosaKataQuizCamera from "@/components/camera/SibiKosaKataQuizCamera";
 import api from "@/lib/axios";
 import { useRouter } from "next/navigation";
+
 
 // 🔹 Helper untuk mengambil opsi acak selain jawaban benar
 function getRandomOptions(dictionaryList, correctId, count = 3) {
@@ -26,7 +28,7 @@ export default function PracticePage() {
 
   // 🔹 Ambil quiz dan kamus
   useEffect(() => {
-    const quizData = localStorage.getItem("skip_quiz_data");
+    const quizData = localStorage.getItem("quiz_skip");
     if (quizData) {
       const parsed = JSON.parse(quizData);
       setQuiz(parsed.data || parsed);
@@ -126,7 +128,7 @@ export default function PracticePage() {
           total_score: correct * 10,
           total_questions: total,
         };
-        await api.post(`/api/user/soal/sublevel/${quiz?.sublevel_id}/finish`, result, {
+        await api.post(`/api/user/soal/level/${quiz?.level_id}/skip`, result, {
           headers: { Authorization: `Bearer ${token}` },
         });
       } catch { }
@@ -263,8 +265,15 @@ export default function PracticePage() {
                 <p className="text-sm text-gray-500">{question.dictionary_definition}</p>
               </div>
 
-              {question.dictionary_category === "ALPHABET" && (
+              {(question.dictionary_category === "ALPHABET" ) && (
                 <SibiAlphabetQuizCamera
+                  targetWord={question.dictionary_word}
+                  onFinish={() => handleAnswer(true)}
+                  onWrong={() => handleAnswer(false)}
+                />
+              )}
+              {question.dictionary_category === "KOSAKATA" && (
+                <SibiKosaKataQuizCamera
                   targetWord={question.dictionary_word}
                   onFinish={() => handleAnswer(true)}
                   onWrong={() => handleAnswer(false)}
