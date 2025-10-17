@@ -11,7 +11,7 @@ const mainMenuItems = [
   { name: "Kamus", icon: "/icons/dictionary.png", href: "/kelas/dictionary" },
   { name: "Papan Skor", icon: "/icons/score.png", href: "/kelas/leaderboard" },
   { name: "Profil", icon: "/icons/profile.png", href: "/kelas/profile" },
-  { name: "Playground", icon: "/icons/profile.png", href: "/kelas/bermain" },
+  { name: "Playground", icon: "/icons/bola.png", href: "/kelas/bermain" },
   { name: "Toko", icon: "/icons/toko.png", href: "/kelas/toko" },
 ];
 
