@@ -11,7 +11,7 @@ export default function AlertPopup({ open, onClose, message = "Goodjob" }) {
           onClick={onClose}
           aria-label="Tutup"
         >
-          ×
+          x
         </button>
         <img
           src={gifUrl}
