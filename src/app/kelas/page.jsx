@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/axios";
 import { Lock, Star } from "lucide-react";
@@ -18,6 +18,9 @@ export default function JourneyPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [startingId, setStartingId] = useState(null);
+
+  // refs untuk scroll ke section level
+  const levelRefs = useRef([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -47,6 +50,13 @@ export default function JourneyPage() {
     return Object.entries(data.progress_by_level);
   }, [data]);
 
+  // Fungsi untuk scroll ke level berikutnya
+  const scrollToLevel = (idx) => {
+    if (levelRefs.current[idx]) {
+      levelRefs.current[idx].scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-[60vh] grid place-items-center text-gray-500 text-sm">
@@ -65,16 +75,27 @@ export default function JourneyPage() {
 
   return (
     <div className="p-6 md:p-10 space-y-12 max-w-6xl mx-auto">
-      {levels.map(([name, lvl]) => {
+      {levels.map(([name, lvl], idx) => {
         const bannerColor = LEVEL_COLORS[name] ?? "#ccc";
         const isUnlockedLevel = !!lvl?.is_level_unlocked;
         const total = Number(lvl?.total_sublevels || 0);
         const completed = Number(lvl?.completed || 0);
         const starsCount = Number(lvl?.total_stars || 0);
+        const prevLevel = levels[idx - 1]?.[1];
+        // Untuk skip button di sublevel pertama level ini
+        const canShowSkipBtn =
+          idx > 0 &&
+          lvl.is_level_unlocked &&
+          prevLevel &&
+          Number(prevLevel.completed) > 0;
 
         return (
-          <section key={String(lvl?.level_id || name)} className="space-y-8">
-            {/* === Header Level (Modern Style) === */}
+          <section
+            key={String(lvl?.level_id || name)}
+            className="space-y-8"
+            ref={el => (levelRefs.current[idx] = el)}
+          >
+            {/* === Header Level === */}
             <div className="rounded-2xl border border-gray-100 bg-gradient-to-r from-white to-gray-50 shadow-sm hover:shadow-md transition-all duration-300 px-6 py-5 md:px-8 md:py-6 flex flex-col md:flex-row items-center justify-between gap-4">
               {/* Left Section */}
               <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-6 w-full">
@@ -87,7 +108,6 @@ export default function JourneyPage() {
                 >
                   {name.charAt(0)}
                 </div>
-
                 {/* Level Info */}
                 <div className="text-center md:text-left">
                   <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-1">{name}</h2>
@@ -97,15 +117,14 @@ export default function JourneyPage() {
                   </p>
                 </div>
               </div>
-
-              {/* Status Badge */}
-              <div className="shrink-0">
+              {/* Status Badge & Skip Button */}
+              <div className="shrink-0 flex flex-col items-end gap-2">
                 <span
                   className={`px-4 py-1.5 text-sm font-medium rounded-full shadow-sm transition-all ${isUnlockedLevel
-                      ? lvl?.is_level_completed
-                        ? "bg-green-100 text-green-700 border border-green-200"
-                        : "bg-yellow-100 text-yellow-700 border border-yellow-200"
-                      : "bg-gray-100 text-gray-500 border border-gray-200"
+                    ? lvl?.is_level_completed
+                      ? "bg-green-100 text-green-700 border border-green-200"
+                      : "bg-yellow-100 text-yellow-700 border border-yellow-200"
+                    : "bg-gray-100 text-gray-500 border border-gray-200"
                     }`}
                 >
                   {isUnlockedLevel
@@ -117,17 +136,18 @@ export default function JourneyPage() {
               </div>
             </div>
 
-
             {/* === Sublevel Grid === */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 justify-items-center">
-              {lvl.sublevels.map((sub) => {
+              {lvl.sublevels.map((sub, subIdx) => {
                 const isUnlocked = sub.is_unlocked;
+                // Tampilkan tombol skip hanya di sublevel pertama, jika syarat terpenuhi
+                const showSkipBtn = canShowSkipBtn && subIdx === 0;
                 return (
                   <div
                     key={sub.sublevel_id}
                     className={`relative flex flex-col items-center justify-center rounded-2xl border transition-all w-32 h-36 bg-white shadow-sm hover:shadow-md ${isUnlocked
-                        ? "border-[#ffbb00] cursor-pointer hover:-translate-y-1 hover:shadow-lg"
-                        : "border-gray-200 opacity-60"
+                      ? "border-[#ffbb00] cursor-pointer hover:-translate-y-1 hover:shadow-lg"
+                      : "border-gray-200 opacity-60"
                       }`}
                     onClick={async () => {
                       if (isUnlocked) {
@@ -177,6 +197,19 @@ export default function JourneyPage() {
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center rounded-2xl z-10">
                         <Lock size={28} className="text-white" />
                       </div>
+                    )}
+                    {/* Skip Level Button */}
+                    {showSkipBtn && (
+                      <button
+                        className="absolute bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold rounded-full shadow transition z-20"
+                        onClick={e => {
+                          e.stopPropagation();
+                          router.push(`/level/${lvl.level_id}/skip-quiz`);
+                        }}
+                        type="button"
+                      >
+                        Skip Level
+                      </button>
                     )}
                   </div>
                 );
