@@ -280,7 +280,6 @@ export default function PracticePage() {
             </div>
           )}
 
-          {/* Tebak Gambar */}
           {currentQuestionType === "TEBAK_GAMBAR" && (
             <div className="space-y-6">
               <div className="flex justify-center">
@@ -308,37 +307,57 @@ export default function PracticePage() {
           {currentQuestionType === "PILIHAN_GANDA" && (
             <div className="grid grid-cols-2 gap-4">
               {options.map((dict) => {
-                const isAnswerAnImage = question.answer && question.answer.includes("://");
-                return isAnswerAnImage ? (
-                  <button
-                    key={dict.id}
-                    className="border rounded-xl overflow-hidden hover:shadow-md transition-all"
-                    onClick={() =>
-                      handleAnswer(`${process.env.NEXT_PUBLIC_API_URL}/storage/${dict.image_url_ref}` === question.answer)
-                    }
-                  >
-                    <img
-                      src={`${process.env.NEXT_PUBLIC_API_URL}/storage/${dict.image_url_ref || "/images/default.jpg"}`}
-                      alt={dict.word_text}
-                      className="w-full h-32 object-cover"
-                    />
-                  </button>
-                ) : (
-                  <button
-                    key={dict.id}
-                    className="rounded-xl border border-gray-300 py-3 px-4 text-gray-800 font-medium hover:border-[#ffbb00] hover:bg-[#fff5d1] transition-all shadow-sm"
-                    onClick={() =>
-                      handleAnswer(dict.definition === question.answer)
-                    }
-                  >
-                    {dict.definition}
-                  </button>
-                );
+                const isAnswerImage = question.answer && question.answer.startsWith("kamus/");
+                const isAnswerVideo = question.answer && question.answer.includes(".webm");
+                if (isAnswerImage) {
+                  return (
+                    <button
+                      key={dict.id}
+                      className="border rounded-xl overflow-hidden hover:shadow-md transition-all"
+                      onClick={() =>
+                        handleAnswer(`${process.env.NEXT_PUBLIC_API_URL}/storage/${dict.image_url_ref}` === `${process.env.NEXT_PUBLIC_API_URL}/storage/${question.answer}`)
+                      }
+                    >
+                      <img
+                        src={`${process.env.NEXT_PUBLIC_API_URL}/storage/${dict.image_url_ref || "/images/default.jpg"}`}
+                        alt={dict.word_text}
+                        className="w-full h-32 object-cover"
+                      />
+                    </button>
+                  );
+                } else if (isAnswerVideo) {
+                  return (
+                    <button
+                      key={dict.id}
+                      className="border rounded-xl overflow-hidden hover:shadow-md transition-all flex flex-col items-center"
+                      onClick={() =>
+                        handleAnswer(dict.video_url_ref === question.answer)
+                      }
+                    >
+                      <video
+                        src={dict.video_url_ref}
+                        controls
+                        className="w-full h-32 object-cover"
+                      />
+                      <span className="mt-2 text-sm text-gray-700">{dict.word_text}</span>
+                    </button>
+                  );
+                } else {
+                  return (
+                    <button
+                      key={dict.id}
+                      className="rounded-xl border border-gray-300 py-3 px-4 text-gray-800 font-medium hover:border-[#ffbb00] hover:bg-[#fff5d1] transition-all shadow-sm"
+                      onClick={() =>
+                        handleAnswer(dict.definition === question.answer)
+                      }
+                    >
+                      {dict.definition}
+                    </button>
+                  );
+                }
               })}
             </div>
           )}
-
-          {/* Matematika */}
           {currentQuestionType === "MATEMATIKA" && (
             <div className="space-y-4">
               <h2 className="text-4xl font-bold text-center text-gray-900">
