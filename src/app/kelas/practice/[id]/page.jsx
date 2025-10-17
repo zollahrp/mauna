@@ -16,32 +16,47 @@ function getRandomOptions(dictionaryList, correctId, count = 3) {
   const shuffled = filtered.sort(() => 0.5 - Math.random());
   return shuffled.slice(0, count);
 }
+
+// Custom AlertPopup pakai Lottie
 function AlertPopup({ open, onClose, message = "Goodjob" }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white w-full rounded-3xl shadow-2xl p-8 flex flex-col items-center max-w-md relative border border-[#ffbb00]">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      onClick={onClose}
+      style={{ cursor: "pointer" }}
+    >
+      <style>
+        {`@import url('https://fonts.googleapis.com/css2?family=Wendy+One&display=swap');`}
+      </style>
+      <div
+        className="bg-gray-50 rounded-2xl shadow-2xl p-8 flex flex-col items-center max-w-xs relative"
+        onClick={(e) => e.stopPropagation()}
+      >
         <DotLottieReact
           src="https://lottie.host/56e5ab76-50c6-4c97-b4c6-32e8e90dc5b2/8246JlaQBQ.lottie"
           loop
           autoplay
-          style={{ width: 140, height: 140, marginBottom: 12 }}
+          style={{ width: 128, height: 128, marginBottom: 16 }}
         />
-        <div className="text-base text-gray-700 text-center mb-6">
-          Kamu sudah menyelesaikan kuis ini!<br />
-          <span className="font-semibold text-[#ffbb00]">Terus belajar dan tingkatkan kemampuanmu!</span><br />
-          Jangan lupa istirahat sejenak, lalu lanjutkan petualanganmu bersama Mauna 🐵✨
-        </div>
-        <button
-          className="px-8 py-3 rounded-xl bg-[#ffbb00] text-white font-bold text-lg tracking-wide hover:bg-[#e5a800] transition-all shadow-lg"
-          onClick={onClose}
+        <div
+          className="text-xl font-bold text-center mb-4"
+          style={{
+            fontFamily: "wendy one, sans-serif",
+            color: "#FFD600",
+            fontSize: "2rem",
+            letterSpacing: "1px",
+            textShadow: "0 2px 8px #ffbb00",
+          }}
         >
-          Kembali ke Kelas
-        </button>
+          {message}
+        </div>
       </div>
     </div>
   );
 }
+
+
 export default function PracticePage() {
   const [quiz, setQuiz] = useState(null);
   const [dictionaryList, setDictionaryList] = useState([]);
@@ -67,7 +82,7 @@ export default function PracticePage() {
         if (res.data?.success && Array.isArray(res.data.data)) {
           setDictionaryList(res.data.data);
         }
-      } catch { }
+      } catch {}
     }
     fetchDictionary();
   }, []);
@@ -152,7 +167,7 @@ export default function PracticePage() {
         await api.post(`/api/user/soal/sublevel/${quiz?.sublevel_id}/finish`, result, {
           headers: { Authorization: `Bearer ${token}` },
         });
-      } catch { }
+      } catch {}
     }
     if (finished && quiz) kirimHasil();
   }, [finished, quiz, correct, total]);
@@ -171,7 +186,19 @@ export default function PracticePage() {
       <AlertPopup
         open={showAlert}
         onClose={() => router.push("/kelas")}
-        message="Goodjob"
+        message={
+          <span
+            style={{
+              fontFamily: '"Wonder Boys", cursive',
+              color: "#FFD600",
+              fontSize: "2rem",
+              letterSpacing: "1px",
+              textShadow: "0 2px 8px #ffbb00",
+            }}
+          >
+            Goodjob
+          </span>
+        }
       />
     );
   }
@@ -193,7 +220,7 @@ export default function PracticePage() {
           headers: { Authorization: `Bearer ${token}` },
         });
         router.push("/kelas");
-      } catch { }
+      } catch {}
     }
 
     return (
@@ -241,11 +268,11 @@ export default function PracticePage() {
       animate={
         flashColor
           ? {
-            backgroundColor:
-              flashColor === "green"
-                ? ["#ffffff", "#dcfce7", "#ffffff"]
-                : ["#ffffff", "#fee2e2", "#ffffff"],
-          }
+              backgroundColor:
+                flashColor === "green"
+                  ? ["#ffffff", "#dcfce7", "#ffffff"]
+                  : ["#ffffff", "#fee2e2", "#ffffff"],
+            }
           : {}
       }
       transition={{ duration: 0.4 }}
@@ -377,8 +404,8 @@ export default function PracticePage() {
                     >
                       <video
                         src={question.dictionary_video_url}
-                        loop
-                        autoPlay
+                        loop 
+                        autoPlay 
                         muted
                         className="w-full h-32 object-fit"
                       />
