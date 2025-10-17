@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import api from "@/lib/axios";
@@ -8,6 +8,7 @@ import api from "@/lib/axios";
 export default function KelasLayout({ children }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userDailyProgress, setUserDailyProgress] = useState(null);
+  const intervalRef = useRef();
 
   const getDailyProgress = async () => {
     try {
@@ -19,7 +20,7 @@ export default function KelasLayout({ children }) {
         setUserDailyProgress(res.data.data);
       }
     } catch (err) {
-      console.error(err);
+      // console.error(err);
     }
   };
 
@@ -27,7 +28,17 @@ export default function KelasLayout({ children }) {
     const token = localStorage.getItem("token");
     setIsLoggedIn(!!token);
     getDailyProgress();
+
+    // Polling setiap 5 detik
+    intervalRef.current = setInterval(() => {
+      getDailyProgress();
+    }, 5000);
+
+    return () => clearInterval(intervalRef.current);
   }, []);
+
+  // Batasi progress maksimal 3
+  const completedSublevels = Math.min(userDailyProgress?.completed_sublevels || 0, 3);
 
   return (
     <div className="relative flex min-h-screen bg-white">
@@ -68,10 +79,7 @@ export default function KelasLayout({ children }) {
                   Tinggal{" "}
                   <span className="font-semibold text-[#ffbb00]">
                     {userDailyProgress
-                      ? `${Math.max(
-                          3 - userDailyProgress.completed_sublevels,
-                          0
-                        )} pelajaran lagi`
+                      ? `${Math.max(3 - completedSublevels, 0)} pelajaran lagi`
                       : "3 pelajaran lagi"}
                   </span>{" "}
                   untuk mulai berkompetisi. Semangat, kamu pasti bisa! 💪
@@ -85,31 +93,18 @@ export default function KelasLayout({ children }) {
         <div className="rounded-2xl p-6 shadow-md bg-white">
           <div className="flex justify-between items-center mb-3">
             <h3 className="font-semibold text-gray-800 text-lg">Misi Harian</h3>
-            {/* <Link
-              href="/misi"
-              className="text-sm text-[#00bfff] font-medium hover:underline"
-            >
-              Lihat semua
-            </Link> */}
           </div>
           <p className="text-sm text-gray-600 mb-2">Dapatkan 10 XP</p>
           <div className="w-full h-4 bg-gray-200 rounded-full overflow-hidden">
             <div
-              className="h-full bg-[#ffbb00]"
+              className="h-full bg-[#ffbb00] transition-all duration-700"
               style={{
-                width: userDailyProgress
-                  ? `${Math.min(
-                      (userDailyProgress.completed_sublevels / 3) * 100,
-                      100
-                    )}%`
-                  : "0%",
+                width: `${(completedSublevels / 3) * 100}%`,
               }}
             ></div>
           </div>
           <p className="text-xs text-gray-500 mt-2">
-            {userDailyProgress
-              ? `${userDailyProgress.completed_sublevels} / 3`
-              : "0 / 3"}
+            {`${completedSublevels} / 3`}
             {userDailyProgress?.is_completed && (
               <span className="ml-2 text-green-600 font-semibold">
                 Selesai!

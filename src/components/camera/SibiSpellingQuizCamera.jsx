@@ -2,7 +2,7 @@
 import { useRef, useState, useEffect } from "react";
 import api from "@/lib/axios"; // Import axios instance
 
-export default function SibiKosaKataQuizCamera({ targetWord, onFinish, onWrong }) {
+export default function SibiSpellingQuizCamera({ targetWord, onFinish, onWrong }) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [progress, setProgress] = useState(Array(targetWord.length).fill("_"));
     const [message, setMessage] = useState(`Tunjukkan huruf: ${targetWord[0].toUpperCase()}`);
@@ -22,38 +22,70 @@ export default function SibiKosaKataQuizCamera({ targetWord, onFinish, onWrong }
         if (typeof window === "undefined" || isHandsLoaded.current) return;
         isHandsLoaded.current = true;
 
+        let isMounted = true;
+
         const loadScript = (src) => {
             return new Promise((resolve, reject) => {
+                // Check if script already exists
+                const existingScript = document.querySelector(`script[src="${src}"]`);
+                if (existingScript) {
+                    if (existingScript.getAttribute('data-loaded') === 'true') {
+                        resolve();
+                        return;
+                    }
+                    // Wait for existing script to load
+                    existingScript.addEventListener('load', resolve);
+                    existingScript.addEventListener('error', reject);
+                    return;
+                }
+
                 const script = document.createElement("script");
                 script.src = src;
-                script.onload = resolve;
-                script.onerror = reject;
+                script.crossOrigin = "anonymous";
+                script.onload = () => {
+                    script.setAttribute('data-loaded', 'true');
+                    console.log(`✅ Loaded: ${src}`);
+                    resolve();
+                };
+                script.onerror = (err) => {
+                    console.error(`❌ Failed to load: ${src}`, err);
+                    reject(err);
+                };
                 document.head.appendChild(script);
             });
         };
 
-        const loadMediaPipe = async () => {
-            await loadScript("https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js");
-            await loadScript("https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js");
-        };
-
         const init = async () => {
             try {
-                await loadMediaPipe();
-                await new Promise((r) => setTimeout(r, 200)); // delay 200ms
-
-                if (!window.Hands) {
-                    console.error("MediaPipe Hands belum siap");
-                    isHandsLoaded.current = false;
-                    return;
+                // Load scripts with proper order
+                console.log("📦 Loading MediaPipe scripts...");
+                await loadScript("https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js");
+                await loadScript("https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4/hands.js");
+                
+                // Wait for global objects to be available
+                let attempts = 0;
+                while ((!window.Hands || !window.Camera) && attempts < 50) {
+                    await new Promise(r => setTimeout(r, 100));
+                    attempts++;
                 }
 
+                if (!isMounted) return;
+
+                if (!window.Hands || !window.Camera) {
+                    throw new Error("MediaPipe tidak dapat dimuat setelah 5 detik");
+                }
+
+                console.log("✅ MediaPipe loaded, initializing Hands...");
+
                 const hands = new window.Hands({
-                    locateFile: (file) =>
-                        `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/${file}`,
+                    locateFile: (file) => {
+                        const url = `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4/${file}`;
+                        console.log(`🔗 Loading: ${url}`);
+                        return url;
+                    },
                 });
 
-                hands.setOptions({
+                await hands.setOptions({
                     maxNumHands: 1,
                     modelComplexity: 1,
                     minDetectionConfidence: 0.7,
@@ -61,39 +93,71 @@ export default function SibiKosaKataQuizCamera({ targetWord, onFinish, onWrong }
                 });
 
                 hands.onResults(onResults);
+                
+                if (!isMounted) return;
                 handsRef.current = hands;
 
+                // Initialize hands properly
+                await hands.initialize();
+                
+                if (!isMounted) return;
+                console.log("✅ Hands initialized");
+
+                // Start camera
                 if (videoRef.current) {
                     const camera = new window.Camera(videoRef.current, {
                         onFrame: async () => {
+                            if (!isMounted || !handsRef.current) return;
                             try {
-                                if (handsRef.current && videoRef.current) {
+                                if (videoRef.current && videoRef.current.readyState === 4) {
                                     await handsRef.current.send({ image: videoRef.current });
                                 }
                             } catch (err) {
-                                console.warn("Mediapipe aborted, skip frame:", err);
+                                if (!err.message?.includes('aborted')) {
+                                    console.warn("⚠️ Frame processing error:", err);
+                                }
                             }
                         },
                         width: 400,
                         height: 300,
                     });
-                    camera.start();
+                    
+                    await camera.start();
+                    
+                    if (!isMounted) {
+                        camera.stop();
+                        return;
+                    }
+                    
                     cameraRef.current = camera;
+                    console.log("✅ Camera started");
                 }
 
-                setIsLoading(false);
+                if (isMounted) {
+                    setIsLoading(false);
+                }
             } catch (err) {
-                console.error("Error initializing MediaPipe:", err);
-                setError("Gagal memuat MediaPipe. Coba refresh halaman.");
-                isHandsLoaded.current = false;
-                setIsLoading(false);
+                console.error("❌ Error initializing MediaPipe:", err);
+                if (isMounted) {
+                    setError(`Gagal memuat MediaPipe: ${err.message}. Coba refresh halaman.`);
+                    isHandsLoaded.current = false;
+                    setIsLoading(false);
+                }
             }
         };
 
         init();
 
         return () => {
-            if (cameraRef.current) cameraRef.current.stop();
+            isMounted = false;
+            if (cameraRef.current) {
+                cameraRef.current.stop();
+                cameraRef.current = null;
+            }
+            if (handsRef.current) {
+                handsRef.current.close();
+                handsRef.current = null;
+            }
             isHandsLoaded.current = false;
         };
     }, []);
@@ -193,7 +257,7 @@ export default function SibiKosaKataQuizCamera({ targetWord, onFinish, onWrong }
             const predicted = data.label?.toUpperCase() ?? "_";
             const confidence = data.confidence ?? 0;
             const currentIdx = currentIndexRef.current;
-            const targetLetter = targetWord[currentIdx].toUpperCase(); // Konversi target juga ke uppercase
+            const targetLetter = targetWord[currentIdx].toUpperCase();
 
             console.log(`Prediksi: ${predicted} (${confidence.toFixed(2)}) | Target: ${targetLetter} | Index: ${currentIdx}`);
 
@@ -209,18 +273,17 @@ export default function SibiKosaKataQuizCamera({ targetWord, onFinish, onWrong }
 
                 setMessage(`✅ Huruf ${predicted} benar!`);
                 
-                // Pindah ke huruf berikutnya dengan delay
+                // Pindah ke huruf berikutnya tanpa delay
                 const nextIndex = currentIdx + 1;
                 if (nextIndex < targetWord.length) {
-                    setTimeout(() => {
-                        currentIndexRef.current = nextIndex;
-                        setCurrentIndex(nextIndex);
-                        setMessage(`Tunjukkan huruf: ${targetWord[nextIndex].toUpperCase()}`);
-                        setIsProcessing(false);
-                    }, 1500); // Delay 1.5 detik untuk memberi waktu user
+                    currentIndexRef.current = nextIndex;
+                    setCurrentIndex(nextIndex);
+                    setMessage(`Tunjukkan huruf: ${targetWord[nextIndex].toUpperCase()}`);
+                    setIsProcessing(false);
                 } else {
                     setIsFinished(true);
                     setMessage(`🎉 Kata lengkap: ${targetWord}`);
+                    cleanupMediaPipe(); // Cleanup resources
                     if (onFinish) onFinish();
                 }
             } else {
@@ -231,6 +294,36 @@ export default function SibiKosaKataQuizCamera({ targetWord, onFinish, onWrong }
             console.error("Prediction error:", err);
             setError("Gagal mengirim data ke server. Pastikan backend berjalan.");
         }
+    };
+
+    // === Cleanup MediaPipe resources ===
+    const cleanupMediaPipe = () => {
+        try {
+            if (cameraRef.current) {
+                cameraRef.current.stop();
+                cameraRef.current = null;
+            }
+            if (handsRef.current) {
+                handsRef.current.close();
+                handsRef.current = null;
+            }
+            if (videoRef.current && videoRef.current.srcObject) {
+                const tracks = videoRef.current.srcObject.getTracks();
+                tracks.forEach(track => track.stop());
+                videoRef.current.srcObject = null;
+            }
+            console.log("MediaPipe resources cleaned up");
+        } catch (err) {
+            console.error("Error cleaning up MediaPipe:", err);
+        }
+    };
+
+    // === SKIP FUNCTION ===
+    const handleSkip = () => {
+        setIsFinished(true);
+        setMessage(`Soal dilewati. Kata: ${targetWord}`);
+        cleanupMediaPipe(); // Cleanup resources when skipped
+        if (onFinish) onFinish();
     };
 
     // === 5. Tampilan UI ===
@@ -272,6 +365,16 @@ export default function SibiKosaKataQuizCamera({ targetWord, onFinish, onWrong }
 
             {error && <p className="text-red-500">{error}</p>}
             {message && <p className="text-black text-lg font-medium">{message}</p>}
+
+            {!isFinished && (
+                <button
+                    onClick={handleSkip}
+                    disabled={isProcessing}
+                    className="mt-2 px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 disabled:bg-gray-400"
+                >
+                    Skip Huruf ⏭️
+                </button>
+            )}
 
             {isFinished && (
                 <button

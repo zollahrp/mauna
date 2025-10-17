@@ -4,9 +4,9 @@ import { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import SibiAlphabetQuizCamera from "@/components/camera/SibiAlphabetQuizCamera";
 import SibiNumberQuizCamera from "@/components/camera/SibiNumberQuizCamera";
-import SibiKosaKataQuizCamera from "@/components/camera/SibiKosaKataQuizCamera";
+import SibiSpellingQuizCamera from "@/components/camera/SibiSpellingQuizCamera";
 import api from "@/lib/axios";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 
 
 // 🔹 Helper untuk mengambil opsi acak selain jawaban benar
@@ -26,6 +26,10 @@ export default function PracticePage() {
   const [flashColor, setFlashColor] = useState(null); // ✅ bisa 'green' atau 'red'
   const router = useRouter();
 
+
+  const params = useParams();
+  const { id } = params; // Ambil id dari URL
+
   // 🔹 Ambil quiz dan kamus
   useEffect(() => {
     const quizData = localStorage.getItem("quiz_skip");
@@ -44,6 +48,7 @@ export default function PracticePage() {
     }
     fetchDictionary();
   }, []);
+
 
   const total = quiz?.total_questions || 0;
   const question = quiz?.questions?.[idx];
@@ -116,6 +121,7 @@ export default function PracticePage() {
 
 
 
+
   // 🔹 Kirim hasil ke backend
   useEffect(() => {
     async function kirimHasil() {
@@ -123,18 +129,20 @@ export default function PracticePage() {
         const token = localStorage.getItem("token");
         if (!token) return;
         const result = {
-          sublevel_id: quiz?.sublevel_id,
+          sublevel_id: 0, // skip tidak pakai sublevel
           correct_answers: correct,
           total_score: correct * 10,
           total_questions: total,
         };
-        await api.post(`/api/user/soal/level/${quiz?.level_id}/skip`, result, {
+        // Gunakan id dari params, bukan dari quiz
+        await api.post(`/api/user/soal/level/${id}/skip`, result, {
           headers: { Authorization: `Bearer ${token}` },
         });
       } catch { }
     }
     if (finished && quiz) kirimHasil();
-  }, [finished, quiz, correct, total]);
+  }, [finished, quiz, correct, total, id]);
+
 
   if (!quiz || !question) {
     return (
@@ -265,7 +273,7 @@ export default function PracticePage() {
                 <p className="text-sm text-gray-500">{question.dictionary_definition}</p>
               </div>
 
-              {(question.dictionary_category === "ALPHABET" ) && (
+              {(question.dictionary_category === "ALPHABET") && (
                 <SibiAlphabetQuizCamera
                   targetWord={question.dictionary_word}
                   onFinish={() => handleAnswer(true)}
@@ -273,7 +281,7 @@ export default function PracticePage() {
                 />
               )}
               {question.dictionary_category === "KOSAKATA" && (
-                <SibiKosaKataQuizCamera
+                <SibiSpellingQuizCamera
                   targetWord={question.dictionary_word}
                   onFinish={() => handleAnswer(true)}
                   onWrong={() => handleAnswer(false)}
@@ -340,13 +348,15 @@ export default function PracticePage() {
                       key={dict.id}
                       className="border rounded-xl overflow-hidden hover:shadow-md transition-all flex flex-col items-center"
                       onClick={() =>
-                        handleAnswer(dict.video_url_ref === question.answer)
+                        handleAnswer(question.dictionary_video_url === question.answer)
                       }
                     >
                       <video
-                        src={dict.video_url_ref}
-                        controls
-                        className="w-full h-32 object-cover"
+                        src={question.dictionary_video_url}
+                        loop
+                        autoPlay
+                        muted
+                        className="w-full h-32 object-fit"
                       />
                       <span className="mt-2 text-sm text-gray-700">{dict.word_text}</span>
                     </button>
