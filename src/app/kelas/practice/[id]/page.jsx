@@ -17,44 +17,7 @@ function getRandomOptions(dictionaryList, correctId, count = 3) {
   return shuffled.slice(0, count);
 }
 
-// Custom AlertPopup pakai Lottie
-function AlertPopup({ open, onClose, message = "Goodjob" }) {
-  if (!open) return null;
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-      onClick={onClose}
-      style={{ cursor: "pointer" }}
-    >
-      <style>
-        {`@import url('https://fonts.googleapis.com/css2?family=Wendy+One&display=swap');`}
-      </style>
-      <div
-        className="bg-gray-50 rounded-2xl shadow-2xl p-8 flex flex-col items-center max-w-xs relative"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <DotLottieReact
-          src="https://lottie.host/56e5ab76-50c6-4c97-b4c6-32e8e90dc5b2/8246JlaQBQ.lottie"
-          loop
-          autoplay
-          style={{ width: 128, height: 128, marginBottom: 16 }}
-        />
-        <div
-          className="text-xl font-bold text-center mb-4"
-          style={{
-            fontFamily: "wendy one, sans-serif",
-            color: "#FFD600",
-            fontSize: "2rem",
-            letterSpacing: "1px",
-            textShadow: "0 2px 8px #ffbb00",
-          }}
-        >
-          {message}
-        </div>
-      </div>
-    </div>
-  );
-}
+
 
 
 export default function PracticePage() {
@@ -180,28 +143,6 @@ export default function PracticePage() {
     );
   }
 
-  // Tampilkan AlertPopup jika selesai
-  if (finished && showAlert) {
-    return (
-      <AlertPopup
-        open={showAlert}
-        onClose={() => router.push("/kelas")}
-        message={
-          <span
-            style={{
-              fontFamily: '"Wonder Boys", cursive',
-              color: "#FFD600",
-              fontSize: "2rem",
-              letterSpacing: "1px",
-              textShadow: "0 2px 8px #ffbb00",
-            }}
-          >
-            Goodjob
-          </span>
-        }
-      />
-    );
-  }
 
   if (finished) {
     const safeCorrect = Math.min(correct, total);
@@ -211,6 +152,19 @@ export default function PracticePage() {
       total_score: safeCorrect * 10,
       total_questions: total,
     };
+    // Calculate stars based on percentage
+    // Determine message based on score
+    const percentage = (safeCorrect / total) * 100;
+    let message = "Good Job!";
+    if (percentage === 100) {
+      message = "Perfect!";
+    } else if (percentage >= 80) {
+      message = "Good Job!";
+    } else if (percentage >= 60) {
+      message = "Nice Try!";
+    } else {
+      message = "Keep Trying!";
+    }
 
     async function handleFinishQuiz() {
       try {
@@ -225,39 +179,161 @@ export default function PracticePage() {
 
     return (
       <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="min-h-[80vh] flex flex-col items-center justify-center px-6"
+      initial={{ opacity: 0, y: 40 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="min-h-[80vh] flex flex-col items-center justify-center"
       >
-        <div className="max-w-md w-full text-center space-y-6 bg-white shadow-xl rounded-2xl p-10 border border-gray-100">
-          <h2 className="text-3xl font-semibold text-gray-900 tracking-tight">
-            Hasil Kuis
-          </h2>
 
-          <div className="space-y-2">
-            <p className="text-gray-600">
-              Jawaban benar:
-              <span className="ml-1 font-semibold text-gray-900">
-                {result.correct_answers} / {result.total_questions}
-              </span>
-            </p>
-            <p className="text-lg font-medium text-gray-800">
-              Skor Akhir:{" "}
-              <span className="text-[#ffbb00] font-bold">
-                {result.total_score}
-              </span>
-            </p>
-          </div>
-
-          <div className="pt-4">
-            <button
-              className="w-full py-3 rounded-xl bg-[#ffbb00] text-white font-medium tracking-wide hover:bg-[#e5a800] transition-all shadow-sm"
-              onClick={() => router.push("/kelas")}
-            >
-              Kembali ke Kelas
-            </button>
-          </div>
+      <div className="max-w-3xl w-full text-center space-y-6 bg-[#FCFBFE] shadow-xl rounded-2xl p-8 border ">
+        <div className="flex justify-center">
+          <DotLottieReact
+          src="https://lottie.host/56e5ab76-50c6-4c97-b4c6-32e8e90dc5b2/8246JlaQBQ.lottie" 
+          loop
+          preload="auto"
+          autoplay
+          className="md:w-52 md:h-52 w-40 h-40"
+        />
         </div>
+
+        {/* Stars */}
+        {(() => {
+        const pct = Math.max(
+          0,
+          Math.round(
+          result.total_questions
+            ? (result.correct_answers / result.total_questions) * 100
+            : 0
+          )
+        );
+        const starsCount = pct >= 70 ? 3 : pct >= 50 ? 2 : pct >= 35 ? 1 : 0;
+        const starVariants = {
+          hidden: { scale: 0, rotate: -180, opacity: 0 },
+          show: (i) => ({
+          scale: 1,
+          rotate: 0,
+          opacity: 1,
+          transition: { 
+            delay: 0.3 * i, 
+            type: "spring", 
+            stiffness: 200, 
+            damping: 15 
+          },
+          }),
+          shine: (i) => ({
+          scale: [1, 1.2, 1],
+          filter: [
+            "brightness(1) drop-shadow(0 0 0px #FFD600)",
+            "brightness(1.5) drop-shadow(0 0 15px #FFD600)",
+            "brightness(1) drop-shadow(0 0 0px #FFD600)"
+          ],
+          transition: { 
+            delay: 0.3 * i + 0.4,
+            duration: 0.6,
+            ease: "easeOut"
+          },
+          })
+        };
+        return (
+          <motion.div
+          initial="hidden"
+          animate="show"
+          className="flex items-center justify-center gap-3 mb-4"
+          >
+          {[0, 1, 2].map((i) => {
+            const filled = i < starsCount;
+            return (
+            <motion.span
+              key={i}
+              custom={i}
+              variants={starVariants}
+              initial="hidden"
+              animate={filled ? ["show", "shine"] : "show"}
+              whileHover={filled ? { scale: 1.1, rotate: 10 } : {}}
+              className="inline-flex"
+            >
+              {filled ? (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                className="w-12 h-12 text-[#FFD600]"
+                fill="currentColor"
+              >
+                <path d="M12 .587l3.668 7.431L23.4 9.75l-5.7 5.556L19.336 24 12 19.897 4.664 24l1.636-8.694L.6 9.75l7.732-1.732L12 .587z" />
+              </svg>
+              ) : (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                className="w-12 h-12 text-gray-300"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+              >
+                <path d="M12 .587l3.668 7.431L23.4 9.75l-5.7 5.556L19.336 24 12 19.897 4.664 24l1.636-8.694L.6 9.75l7.732-1.732L12 .587z" />
+              </svg>
+              )}
+            </motion.span>
+            );
+          })}
+          </motion.div>
+        );
+        })()}
+
+        {/* Title */}
+        <motion.div
+        initial={{ y: 8, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.15 }}
+        className="text-2xl md:text-3xl font-bold text-gray-900"
+        >
+        {message}
+        </motion.div>
+
+        {/* Stats boxes: jumlah soal, jawaban benar, skor (%) */}
+        {(() => {
+        const pct = Math.max(
+          0,
+          Math.round(
+          result.total_questions
+            ? (result.correct_answers / result.total_questions) * 100
+            : 0
+          )
+        );
+        const stats = [
+          { label: "Jumlah Soal", value: result.total_questions ?? 0 },
+          { label: "Jawaban Benar", value: result.correct_answers ?? 0 },
+          { label: "Skor (%)", value: `${pct}%` },
+        ];
+        return (
+          <div className="grid grid-cols-3 gap-3 w-full mt-2">
+          {stats.map((s, i) => (
+            <motion.div
+            key={s.label}
+            initial={{ y: 10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.08 * i }}
+            className="bg-white border border-gray-100 rounded-xl p-4 flex flex-col items-center justify-center"
+            >
+            <div className="text-sm text-gray-500">{s.label}</div>
+            <div className="text-xl font-semibold text-gray-900 mt-1">
+              {s.value}
+            </div>
+            </motion.div>
+          ))}
+          </div>
+        );
+        })()}
+
+        {/* Finish button */}
+        <div className="pt-4">
+        <button
+          onClick={handleFinishQuiz}
+          className="px-6 py-3 rounded-xl bg-[#ffbb00] hover:bg-[#e6a800] text-white font-semibold shadow-md"
+        >
+          Selesai
+        </button>
+        </div>
+      </div>
       </motion.div>
     );
   }
@@ -455,3 +531,4 @@ export default function PracticePage() {
     </motion.section>
   );
 }
+
