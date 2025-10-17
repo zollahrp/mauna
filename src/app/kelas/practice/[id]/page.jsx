@@ -7,15 +7,41 @@ import SibiNumberQuizCamera from "@/components/camera/SibiNumberQuizCamera";
 import SibiSpellingQuizCamera from "@/components/camera/SibiSpellingQuizCamera";
 import api from "@/lib/axios";
 import { useRouter } from "next/navigation";
+import React from "react";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 
-
-// 🔹 Helper untuk mengambil opsi acak selain jawaban benar
+// Helper untuk opsi acak
 function getRandomOptions(dictionaryList, correctId, count = 3) {
   const filtered = dictionaryList.filter((d) => d.id !== correctId);
   const shuffled = filtered.sort(() => 0.5 - Math.random());
   return shuffled.slice(0, count);
 }
-
+function AlertPopup({ open, onClose, message = "Goodjob" }) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-white w-full rounded-3xl shadow-2xl p-8 flex flex-col items-center max-w-md relative border border-[#ffbb00]">
+        <DotLottieReact
+          src="https://lottie.host/56e5ab76-50c6-4c97-b4c6-32e8e90dc5b2/8246JlaQBQ.lottie"
+          loop
+          autoplay
+          style={{ width: 140, height: 140, marginBottom: 12 }}
+        />
+        <div className="text-base text-gray-700 text-center mb-6">
+          Kamu sudah menyelesaikan kuis ini!<br />
+          <span className="font-semibold text-[#ffbb00]">Terus belajar dan tingkatkan kemampuanmu!</span><br />
+          Jangan lupa istirahat sejenak, lalu lanjutkan petualanganmu bersama Mauna 🐵✨
+        </div>
+        <button
+          className="px-8 py-3 rounded-xl bg-[#ffbb00] text-white font-bold text-lg tracking-wide hover:bg-[#e5a800] transition-all shadow-lg"
+          onClick={onClose}
+        >
+          Kembali ke Kelas
+        </button>
+      </div>
+    </div>
+  );
+}
 export default function PracticePage() {
   const [quiz, setQuiz] = useState(null);
   const [dictionaryList, setDictionaryList] = useState([]);
@@ -23,10 +49,11 @@ export default function PracticePage() {
   const [tries, setTries] = useState(0);
   const [correct, setCorrect] = useState(0);
   const [finished, setFinished] = useState(false);
-  const [flashColor, setFlashColor] = useState(null); // ✅ bisa 'green' atau 'red'
+  const [flashColor, setFlashColor] = useState(null);
+  const [showAlert, setShowAlert] = useState(false);
   const router = useRouter();
 
-  // 🔹 Ambil quiz dan kamus
+  // Ambil quiz dan kamus
   useEffect(() => {
     const quizData = localStorage.getItem("current_quiz");
     if (quizData) {
@@ -62,13 +89,11 @@ export default function PracticePage() {
     return allOptions.sort(() => 0.5 - Math.random());
   }, [dictionaryList, question]);
 
-  // ✅ Flash sesuai hasil jawaban
+  // Flash sesuai hasil jawaban
   function handleAnswer(isCorrect) {
     if (isCorrect) {
       setCorrect((c) => c + 1);
       setFlashColor("green");
-
-      // ✅ kalau benar, next seperti biasa
       setTimeout(() => {
         setFlashColor(null);
         if (idx + 1 < total) {
@@ -76,18 +101,15 @@ export default function PracticePage() {
           setTries(0);
         } else {
           setFinished(true);
+          setTimeout(() => setShowAlert(true), 500);
         }
       }, 400);
     } else {
       setFlashColor("red");
-
-      // 🔹 khusus untuk kamera: JANGAN langsung next
       if (currentQuestionType === "OPEN_CAMERA") {
         setTimeout(() => setFlashColor(null), 400);
-        return; // stop di sini biar user bisa coba lagi
+        return;
       }
-
-      // 🔹 selain kamera, tetap lanjut ke soal berikutnya
       setTimeout(() => {
         setFlashColor(null);
         if (idx + 1 < total) {
@@ -95,6 +117,7 @@ export default function PracticePage() {
           setTries(0);
         } else {
           setFinished(true);
+          setTimeout(() => setShowAlert(true), 500);
         }
       }, 400);
     }
@@ -102,7 +125,6 @@ export default function PracticePage() {
 
   function handleSkip() {
     setFlashColor("red");
-
     setTimeout(() => {
       setFlashColor(null);
       if (idx + 1 < total) {
@@ -110,13 +132,12 @@ export default function PracticePage() {
         setTries(0);
       } else {
         setFinished(true);
+        setTimeout(() => setShowAlert(true), 500);
       }
     }, 400);
   }
 
-
-
-  // 🔹 Kirim hasil ke backend
+  // Kirim hasil ke backend
   useEffect(() => {
     async function kirimHasil() {
       try {
@@ -141,6 +162,17 @@ export default function PracticePage() {
       <div className="min-h-[60vh] flex items-center justify-center text-gray-500 text-lg">
         Quiz tidak ditemukan.
       </div>
+    );
+  }
+
+  // Tampilkan AlertPopup jika selesai
+  if (finished && showAlert) {
+    return (
+      <AlertPopup
+        open={showAlert}
+        onClose={() => router.push("/kelas")}
+        message="Goodjob"
+      />
     );
   }
 
@@ -211,8 +243,8 @@ export default function PracticePage() {
           ? {
             backgroundColor:
               flashColor === "green"
-                ? ["#ffffff", "#dcfce7", "#ffffff"] // 💚 hijau ketika benar
-                : ["#ffffff", "#fee2e2", "#ffffff"], // ❤️ merah ketika salah
+                ? ["#ffffff", "#dcfce7", "#ffffff"]
+                : ["#ffffff", "#fee2e2", "#ffffff"],
           }
           : {}
       }
@@ -265,7 +297,7 @@ export default function PracticePage() {
                 <p className="text-sm text-gray-500">{question.dictionary_definition}</p>
               </div>
 
-              {(question.dictionary_category === "ALPHABET" ) && (
+              {(question.dictionary_category === "ALPHABET") && (
                 <SibiAlphabetQuizCamera
                   targetWord={question.dictionary_word}
                   onFinish={() => handleAnswer(true)}
@@ -295,7 +327,7 @@ export default function PracticePage() {
                 <img
                   src={`${process.env.NEXT_PUBLIC_API_URL}/storage/${question.image_url}`}
                   alt="Gambar isyarat"
-                  className="rounded-xl border w-48 h-48 object-cover shadow-sm"
+                  className="rounded-xl border w-48 h-48 object-fit shadow-sm"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -330,7 +362,7 @@ export default function PracticePage() {
                       <img
                         src={`${process.env.NEXT_PUBLIC_API_URL}/storage/${dict.image_url_ref || "/images/default.jpg"}`}
                         alt={dict.word_text}
-                        className="w-full h-32 object-cover"
+                        className="w-full h-full object-fit"
                       />
                     </button>
                   );
@@ -345,8 +377,8 @@ export default function PracticePage() {
                     >
                       <video
                         src={question.dictionary_video_url}
-                        loop 
-                        autoPlay 
+                        loop
+                        autoPlay
                         muted
                         className="w-full h-32 object-fit"
                       />
@@ -384,12 +416,6 @@ export default function PracticePage() {
 
           {/* Tombol */}
           <div className="pt-6 flex gap-4">
-            {/* <button
-              className="flex-1 py-3 rounded-xl bg-[#ffbb00] text-white font-semibold hover:bg-[#e5a800] transition-all shadow-sm"
-              onClick={() => handleAnswer(false)}
-            >
-              Selesai
-            </button> */}
             <button
               className="flex-1 py-3 rounded-xl border border-gray-300 text-gray-800 font-semibold hover:border-[#ffbb00] hover:bg-[#fff5d1] transition-all shadow-sm"
               onClick={handleSkip}

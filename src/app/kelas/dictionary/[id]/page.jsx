@@ -57,7 +57,7 @@ export default function DictionaryDetail({ params }) {
     })
   }, [id, data?.word_text, showToast])
 
-  const imageUrl = data?.image_url && data.image_url !== "" ? data.image_url : undefined
+  const imageUrl = `${process.env.NEXT_PUBLIC_API_URL}/storage/` + (data?.image_url && data.image_url !== "" ? data.image_url : undefined)
 
   useEffect(() => {
     if (data && !data.video_url) setTab("image")
