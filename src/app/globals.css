@@ -20,7 +20,7 @@
 }
 
 body {
-  background: var(--background);
+  background: #fff !important;
   color: var(--foreground);
   font-family: var(--font-poppins); /* Atur font default body ke Inter */
 }
@@ -37,7 +37,13 @@ body {
 .font-roboto {
   font-family: var(--font-roboto), sans-serif;
 }
-
+.bottom-nav {
+  background: #fff;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  z-index: 50;
+} 
 
 /* ⛔️ Nonaktifkan forced dark mode pada input */
 input, textarea, select {

@@ -28,7 +28,7 @@ export default function PracticePage() {
 
   // 🔹 Ambil quiz dan kamus
   useEffect(() => {
-    const quizData = localStorage.getItem("current_quiz");
+    const quizData = localStorage.getItem("quiz_skip");
     if (quizData) {
       const parsed = JSON.parse(quizData);
       setQuiz(parsed.data || parsed);
@@ -128,7 +128,7 @@ export default function PracticePage() {
           total_score: correct * 10,
           total_questions: total,
         };
-        await api.post(`/api/user/soal/sublevel/${quiz?.sublevel_id}/finish`, result, {
+        await api.post(`/api/user/soal/level/${quiz?.level_id}/skip`, result, {
           headers: { Authorization: `Bearer ${token}` },
         });
       } catch { }
