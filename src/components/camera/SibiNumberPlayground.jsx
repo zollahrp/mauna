@@ -85,45 +85,77 @@ export default function SibiNumberPlayground() {
     // === 1. Setup Mediapipe Hands (Inisialisasi) ===
     useEffect(() => {
         if (typeof window === "undefined" || isHandsLoaded.current) return;
+        isHandsLoaded.current = true;
+
+        let isMounted = true;
         
         setPredictedLabel("---");
         setConfidence(0);
         setError(null);
         setIsLoading(true);
 
-        if (cameraRef.current) {
-            cameraRef.current.stop();
-            cameraRef.current = null;
-        }
-        
-        isHandsLoaded.current = true;
+        const loadScript = (src) => {
+            return new Promise((resolve, reject) => {
+                // Check if script already exists
+                const existingScript = document.querySelector(`script[src="${src}"]`);
+                if (existingScript) {
+                    if (existingScript.getAttribute('data-loaded') === 'true') {
+                        resolve();
+                        return;
+                    }
+                    // Wait for existing script to load
+                    existingScript.addEventListener('load', resolve);
+                    existingScript.addEventListener('error', reject);
+                    return;
+                }
 
-        const loadScript = (src) => new Promise((resolve, reject) => {
-            const script = document.createElement("script");
-            script.src = src;
-            script.onload = resolve;
-            script.onerror = reject;
-            document.head.appendChild(script);
-        });
-
-        const loadMediaPipe = async () => {
-            await loadScript("https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js");
-            await loadScript("https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js");
+                const script = document.createElement("script");
+                script.src = src;
+                script.crossOrigin = "anonymous";
+                script.onload = () => {
+                    script.setAttribute('data-loaded', 'true');
+                    console.log(`✅ Loaded: ${src}`);
+                    resolve();
+                };
+                script.onerror = (err) => {
+                    console.error(`❌ Failed to load: ${src}`, err);
+                    reject(err);
+                };
+                document.head.appendChild(script);
+            });
         };
 
         const init = async () => {
             try {
-                await loadMediaPipe();
-                await new Promise((r) => setTimeout(r, 200));
+                // Load scripts with proper order
+                console.log("📦 Loading MediaPipe scripts (Number Playground)...");
+                await loadScript("https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js");
+                await loadScript("https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4/hands.js");
+                
+                // Wait for global objects to be available
+                let attempts = 0;
+                while ((!window.Hands || !window.Camera) && attempts < 50) {
+                    await new Promise(r => setTimeout(r, 100));
+                    attempts++;
+                }
 
-                if (!window.Hands) return;
+                if (!isMounted) return;
+
+                if (!window.Hands || !window.Camera) {
+                    throw new Error("MediaPipe tidak dapat dimuat setelah 5 detik");
+                }
+
+                console.log("✅ MediaPipe loaded, initializing Hands...");
 
                 const hands = new window.Hands({
-                    locateFile: (file) =>
-                        `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`, 
+                    locateFile: (file) => {
+                        const url = `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4/${file}`;
+                        console.log(`🔗 Loading: ${url}`);
+                        return url;
+                    },
                 });
 
-                hands.setOptions({
+                await hands.setOptions({
                     maxNumHands: 1,
                     modelComplexity: 1,
                     minDetectionConfidence: 0.7,
@@ -131,39 +163,76 @@ export default function SibiNumberPlayground() {
                 });
 
                 hands.onResults(onResults);
-                handsRef.current = hands;
                 
+                if (!isMounted) return;
+                handsRef.current = hands;
+
+                // Initialize hands properly
+                await hands.initialize();
+                
+                if (!isMounted) return;
+                console.log("✅ Hands initialized");
+
+                // Start camera
                 if (videoRef.current) {
                     const camera = new window.Camera(videoRef.current, {
                         onFrame: async () => {
+                            if (!isMounted || !handsRef.current) return;
                             try {
-                                if (handsRef.current && videoRef.current) {
+                                if (videoRef.current && videoRef.current.readyState === 4) {
                                     await handsRef.current.send({ image: videoRef.current });
                                 }
                             } catch (err) {
-                                console.warn("Mediapipe aborted, skip frame:", err);
+                                if (!err.message?.includes('aborted')) {
+                                    console.warn("⚠️ Frame processing error:", err);
+                                }
                             }
                         },
                         width: 640,
                         height: 480,
                     });
-                    camera.start();
+                    
+                    await camera.start();
+                    
+                    if (!isMounted) {
+                        camera.stop();
+                        return;
+                    }
+                    
                     cameraRef.current = camera;
+                    console.log("✅ Camera started (Number)");
                 }
 
-                setIsLoading(false);
+                if (isMounted) {
+                    setIsLoading(false);
+                }
             } catch (err) {
-                console.error("Error initializing MediaPipe:", err);
-                setError("Gagal memuat MediaPipe. Coba refresh halaman.");
-                isHandsLoaded.current = false;
-                setIsLoading(false);
+                console.error("❌ Error initializing MediaPipe:", err);
+                if (isMounted) {
+                    setError(`Gagal memuat MediaPipe: ${err.message}. Coba refresh halaman.`);
+                    isHandsLoaded.current = false;
+                    setIsLoading(false);
+                }
             }
         };
 
         init();
 
         return () => {
-            if (cameraRef.current) cameraRef.current.stop();
+            isMounted = false;
+            if (cameraRef.current) {
+                cameraRef.current.stop();
+                cameraRef.current = null;
+            }
+            if (handsRef.current) {
+                handsRef.current.close();
+                handsRef.current = null;
+            }
+            if (videoRef.current && videoRef.current.srcObject) {
+                const tracks = videoRef.current.srcObject.getTracks();
+                tracks.forEach(track => track.stop());
+                videoRef.current.srcObject = null;
+            }
             isHandsLoaded.current = false;
         };
     }, []);
