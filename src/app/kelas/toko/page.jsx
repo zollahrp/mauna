@@ -28,7 +28,7 @@ export default function TokoPage() {
       setProfileLoading(true);
       try {
         const res = await api.get("/api/auth/profile");
-        setXp(res.data?.data?.total_xp ?? 0);
+        setXp(res.data?.data?.total_points ?? 0); // gunakan total_points
       } catch {
         setXp(0);
       }
@@ -60,7 +60,7 @@ export default function TokoPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
         <h1 className="text-3xl font-bold tracking-tight">Toko</h1>
         <div className="flex items-center gap-2">
-          <span className="text-gray-700 font-medium">XP Kamu:</span>
+          <span className="text-gray-700 font-medium">Poin Kamu:</span>
           {profileLoading ? (
             <span className="text-gray-400 text-sm">Memuat...</span>
           ) : (
@@ -130,7 +130,7 @@ export default function TokoPage() {
                 {/* Action */}
                 <div className="flex flex-col items-center sm:items-end mt-3 sm:mt-0">
                   <div className="text-[#ffbb00] font-semibold mb-2 text-base">
-                    🪙 {item.xp_cost} XP
+                    🪙 {item.xp_cost} Poin
                   </div>
                   <button
                     onClick={() => handleBuy(item.id, item.xp_cost)}

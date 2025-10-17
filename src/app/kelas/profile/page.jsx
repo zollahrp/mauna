@@ -23,7 +23,7 @@ export default function ProfilePage() {
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [userBadges, setUserBadges] = useState([]);
   const [badgesLoading, setBadgesLoading] = useState(true);
-
+  const [inventory, setInventory] = useState([]);
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -154,6 +154,19 @@ export default function ProfilePage() {
 
     return errors;
   };
+  const getInventory = async () => {
+    try {
+      const res = await api.get("/api/auth/inventory");
+      console.log("Inventory data:", res.data);
+      setInventory(res.data?.data || []);
+    } catch {
+      setInventory([]);
+    }
+  };
+
+  useEffect(() => {
+    getInventory();
+  }, []);
 
   const handleSave = async () => {
     if (isUpdating) return;
@@ -410,10 +423,10 @@ export default function ProfilePage() {
                 <div
                   key={badge.badge_id}
                   className={`border rounded-xl p-4 flex flex-col items-center gap-2 shadow hover:scale-105 transition-transform duration-200 cursor-pointer ${badge.level === "EASY"
-                      ? "bg-green-100 text-green-700 border-green-300"
-                      : badge.level === "MEDIUM"
-                        ? "bg-yellow-100 text-yellow-700 border-yellow-300"
-                        : "bg-red-100 text-red-700 border-red-300"
+                    ? "bg-green-100 text-green-700 border-green-300"
+                    : badge.level === "MEDIUM"
+                      ? "bg-yellow-100 text-yellow-700 border-yellow-300"
+                      : "bg-red-100 text-red-700 border-red-300"
                     }`}
                   title={badge.nama}
                 >
@@ -435,6 +448,63 @@ export default function ProfilePage() {
                   </span>
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+        <div className="bg-white rounded-2xl border border-[#ffbb00]/40 p-6 mb-8 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <Image src="/icons/inventory.png" alt="Inventory" width={24} height={24} />
+            <h2 className="font-semibold text-gray-800">Inventory Kamu</h2>
+          </div>
+          {inventory.length === 0 ? (
+            <div className="text-gray-400 text-center py-6">Belum ada item di inventory.</div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {inventory.map((item) => {
+                let iconSrc = "";
+                if (item.type === "streak_freeze") {
+                  iconSrc = "/icons/freeze.png";
+                } else if (item.type === "boost") {
+                  iconSrc = "/icons/Boost.png";
+                } else if (item.type === "Badge") {
+                  iconSrc = "/icons/Emas.png";
+                } else {
+                  iconSrc = `${process.env.NEXT_PUBLIC_API_URL}/storage/${item.icon}`;
+                }
+                return (
+                  <div
+                    key={item.id}
+                    className="border rounded-xl p-4 flex gap-4 items-center shadow hover:scale-105 transition-transform duration-200 cursor-pointer bg-[#f9fafb]"
+                    title={item.name}
+                  >
+                    <Image
+                      src={iconSrc}
+                      alt={item.name}
+                      width={56}
+                      height={56}
+                      className="rounded-lg"
+                    />
+                    <div className="flex-1">
+                      <div className="font-bold text-base text-gray-900">{item.name}</div>
+                      <div className="text-xs text-gray-600 mb-2">{item.description}</div>
+                      <div className="flex gap-2 items-center text-xs">
+                        <span className="bg-[#ffbb00]/20 text-[#ffbb00] px-2 py-0.5 rounded font-semibold">
+                          x{item.quantity}
+                        </span>
+                        {item.owned_at && (
+                          <span className="text-gray-400">
+                            Didapatkan: {new Date(item.owned_at).toLocaleDateString("id-ID", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
