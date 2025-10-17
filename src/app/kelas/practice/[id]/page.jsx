@@ -12,9 +12,33 @@ import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 
 // Helper untuk opsi acak
 function getRandomOptions(dictionaryList, correctId, count = 3) {
-  const filtered = dictionaryList.filter((d) => d.id !== correctId);
-  const shuffled = filtered.sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, count);
+  // Sort dictionary by id first
+  const sortedList = [...dictionaryList].sort((a, b) => a.id - b.id);
+  
+  const correctIndex = sortedList.findIndex((d) => d.id === correctId);
+  if (correctIndex === -1) return [];
+  
+  const options = [];
+  
+  // Ambil dari sekitar index yang benar
+  for (let i = 1; options.length < count && correctIndex + i < sortedList.length; i++) {
+    const item = sortedList[correctIndex + i];
+    if (item.id !== correctId) {
+      options.push(item);
+    }
+  }
+
+  // Jika masih kurang, ambil dari belakang
+  if (options.length < count) {
+    for (let i = 1; options.length < count && correctIndex - i >= 0; i++) {
+      const item = sortedList[correctIndex - i];
+      if (item.id !== correctId) {
+        options.push(item);
+      }
+    }
+  }
+  
+  return options.slice(0, count);
 }
 
 
