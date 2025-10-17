@@ -9,18 +9,18 @@ import api from "@/lib/axios";
 import { useRouter } from "next/navigation";
 import React from "react";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
-import goodjobLottie from "@/components/Alert/goodjob.json"
-
+import goodjobLottie from "@/components/Alert/goodjob.json";
+import Lottie from "lottie-react";
 // Helper untuk opsi acak
 function getRandomOptions(dictionaryList, correctId, count = 3) {
   // Sort dictionary by id first
   const sortedList = [...dictionaryList].sort((a, b) => a.id - b.id);
-  
+
   const correctIndex = sortedList.findIndex((d) => d.id === correctId);
   if (correctIndex === -1) return [];
-  
+
   const options = [];
-  
+
   // Ambil dari sekitar index yang benar
   for (let i = 1; options.length < count && correctIndex + i < sortedList.length; i++) {
     const item = sortedList[correctIndex + i];
@@ -38,7 +38,7 @@ function getRandomOptions(dictionaryList, correctId, count = 3) {
       }
     }
   }
-  
+
   return options.slice(0, count);
 }
 
@@ -211,10 +211,10 @@ export default function PracticePage() {
 
         <div className="max-w-3xl w-full text-center space-y-6 bg-[#FCFBFE] shadow-xl rounded-2xl p-8 border ">
           <div className="flex justify-center">
-            <DotLottieReact
+            <Lottie
               animationData={goodjobLottie}
-              loop={true}
-              autoplay={true}
+              loop
+              autoplay
               className="md:w-52 md:h-52 w-40 h-40"
             />
           </div>
