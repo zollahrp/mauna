@@ -227,7 +227,7 @@ export default function Home() {
       <section className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-b from-[#FAFAFA] to-[##f3faf8] px-4">
         <div className="text-center max-w-2xl">
           <h2 className="text-4xl md:text-5xl font-fredoka font-bold text-[#ffbb00] mb-0 leading-tight">
-            Kapan pun, di mana pun ✨
+            Kapan pun, di mana pun
           </h2>
           <p className="text-gray-600 text-lg md:text-xl mb-10">
             Belajar bahasa isyarat fleksibel tanpa batas. Akses materi sesuai
