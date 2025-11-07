@@ -138,7 +138,7 @@ export default function DictionaryDetail({ params }) {
     )
 
   return (
-    <div className="min-h-screen bg-white px-6 py-10 font-poppins md:pl-[17rem] md:pr-[17rem] transition-all duration-300">
+    <div className="min-h-screen bg-white px-6 py-10 font-poppins  transition-all duration-300">
       {/* Tombol kembali */}
       <Link href="/kelas/dictionary">
         <div className="inline-flex items-center text-sm text-gray-600 hover:text-[#ffbb00] transition cursor-pointer">
@@ -146,7 +146,7 @@ export default function DictionaryDetail({ params }) {
         </div>
       </Link>
 
-      <div className="grid grid-cols-1 md:grid-cols-[1.3fr_1fr] gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Kolom media */}
         <div className="bg-white border border-gray-100 rounded-xl shadow-sm p-4">
           <div className="flex gap-2 mb-3">
@@ -202,11 +202,7 @@ export default function DictionaryDetail({ params }) {
           )}
 
           {/* Tombol aksi */}
-          <div className="flex flex-wrap gap-2 mt-4">
-            <Button onClick={onToggleLike} active={liked}>
-              {liked ? <Heart /> : <HeartOff />}
-              {liked ? "Favorit" : "Suka"}
-            </Button>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-4">
             <Button onClick={copyLink}>
               <LinkIcon /> Salin
             </Button>
@@ -225,7 +221,7 @@ export default function DictionaryDetail({ params }) {
         <div className="bg-white border border-gray-100 rounded-xl shadow-sm p-6 space-y-3">
           <h1 className="text-2xl font-semibold text-gray-900">{data.word_text}</h1>
           <p className="text-gray-600 leading-relaxed">{data.definition}</p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
+          <div className="grid grid-cols-2 lg:grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
             <InfoItem label="Kategori" value={data.category || "-"} />
             <InfoItem label="Tanggal" value={createdAt} />
             {data.total_soal && <InfoItem label="Total Soal" value={data.total_soal} />}

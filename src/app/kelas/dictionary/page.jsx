@@ -45,7 +45,7 @@ export default function DictionaryPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-white px-6 py-10 font-poppins md:pl-[17rem] md:pr-[17rem] transition-all duration-300">
+    <div className="min-h-screen bg-white px-6 py-10 font-poppins transition-all duration-300">
       {/* Header Tabs */}
       <div className="flex flex-wrap justify-center gap-3 mb-10">
         {categories.map((cat) => (

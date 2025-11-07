@@ -34,7 +34,7 @@ export default function BermainPage() {
     const [mode, setMode] = useState(PlaygroundMode.ALPHABET); // Default mode
 
     return (
-        <div className="min-h-screen bg-white px-6 py-10 font-poppins md:pl-[17rem] md:pr-[17rem] transition-all duration-300">
+        <div className="min-h-screen bg-white px-6 py-10 font-poppins  transition-all duration-300">
             <h1 className="text-3xl font-bold text-gray-800 mb-2">Playground Bahasa Isyarat</h1>
             
             <p className="text-gray-600 mb-8">

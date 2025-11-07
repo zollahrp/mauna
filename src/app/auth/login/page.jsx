@@ -71,6 +71,13 @@ export default function LoginPage() {
     }
   };
 
+  const handleGuestLogin = () => {
+    toast.success("Masuk sebagai Guest berhasil!", { duration: 2000 });
+    
+    // Redirect ke halaman kelas
+    setTimeout(() => router.push("/kelas"), 1000);
+  };
+
   return (
     <div className="min-h-screen relative bg-white font-poppins flex flex-col items-center justify-center px-4">
       {/* Header absolute */}
@@ -132,12 +139,37 @@ export default function LoginPage() {
           </span>
         </div>
 
+        {/* Forgot Password Link */}
+        <Link 
+          href="/auth/forgot-password" 
+          className="text-sm text-yellow-500 font-medium hover:underline self-start -mt-1 mb-2"
+        >
+          Lupa kata sandi?
+        </Link>
+
         {/* Submit Button */}
         <button
           type="submit"
-          className="w-full bg-yellow-400 hover:bg-yellow-500 text-white font-semibold py-3 rounded-2xl shadow-[0_3px_0_#b45309] transition active:translate-y-0.5 cursor-pointer"
+          disabled={loading}
+          className="w-full bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-2xl shadow-[0_3px_0_#b45309] transition active:translate-y-0.5 cursor-pointer"
         >
-          MASUK
+          {loading ? "MEMPROSES..." : "MASUK"}
+        </button>
+
+        {/* Divider */}
+        <div className="flex items-center my-4">
+          <div className="flex-1 border-t border-gray-300"></div>
+          <span className="px-3 text-sm text-gray-500 font-medium">atau</span>
+          <div className="flex-1 border-t border-gray-300"></div>
+        </div>
+
+        {/* Guest Login Button */}
+        <button
+          type="button"
+          onClick={handleGuestLogin}
+          className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 rounded-2xl shadow-[0_3px_0_#9ca3af] transition active:translate-y-0.5 cursor-pointer border border-gray-300"
+        >
+          MASUK SEBAGAI GUEST
         </button>
       </form>
 

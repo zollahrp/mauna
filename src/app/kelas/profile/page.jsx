@@ -1,5 +1,3 @@
-// src/app/kelas/profile/page.jsx
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -19,11 +17,13 @@ export default function ProfilePage() {
   const [formData, setFormData] = useState({});
   const [isUpdating, setIsUpdating] = useState(false);
   const [avatarFile, setAvatarFile] = useState(null); // State baru untuk file avatar
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false); // State untuk loading upload avatar
   const router = useRouter();
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [userBadges, setUserBadges] = useState([]);
   const [badgesLoading, setBadgesLoading] = useState(true);
   const [inventory, setInventory] = useState([]);
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -95,17 +95,61 @@ export default function ProfilePage() {
     setShowAvatarModal(true);
   };
 
+  // ✅ Fungsi untuk upload avatar langsung
+  const uploadAvatarDirectly = async (file) => {
+    setIsUploadingAvatar(true);
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append('avatar', file);
+
+      console.log("Uploading avatar:", file.name);
+
+      const res = await api.patch("/api/auth/profile", formDataToSend);
+
+      if (res.data?.success) {
+        // Update user dengan data yang diterima dari respons
+        const updatedUser = { ...user, ...res.data.data };
+        setUser(updatedUser);
+
+        localStorage.setItem(
+          "ProfileInfo",
+          JSON.stringify({
+            AccessToken: localStorage.getItem("token"),
+            user: updatedUser,
+          })
+        );
+
+        toast.success("Foto profil berhasil diperbarui!");
+      } else {
+        throw new Error(res.data?.message || "Response tidak valid");
+      }
+    } catch (error) {
+      console.error("Error uploading avatar:", error);
+      const errorData = error.response?.data;
+      const errorMessage = errorData?.detail || errorData?.message || "Gagal mengunggah foto";
+      toast.error(errorMessage);
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
   // Handler saat file dipilih dari AvatarUploader
-  const handleAvatarSelected = (file) => {
+  const handleAvatarSelected = async (file) => {
     setAvatarFile(file);
     setShowAvatarModal(false);
-    toast.success("Foto berhasil dipilih, klik Simpan untuk mengunggah!");
+    
+    // Langsung upload foto
+    await uploadAvatarDirectly(file);
+    
+    // Reset state setelah upload
+    setAvatarFile(null);
   };
 
   // Handler tutup modal
   const handleAvatarModalClose = () => {
     setShowAvatarModal(false);
   };
+
   // Ambil badge user dari /api/badges/my-badges
   useEffect(() => {
     const fetchUserBadges = async () => {
@@ -124,6 +168,7 @@ export default function ProfilePage() {
     };
     fetchUserBadges();
   }, []);
+
   const validateForm = () => {
     const errors = [];
 
@@ -154,6 +199,7 @@ export default function ProfilePage() {
 
     return errors;
   };
+
   const getInventory = async () => {
     try {
       const res = await api.get("/api/auth/inventory");
@@ -168,6 +214,7 @@ export default function ProfilePage() {
     getInventory();
   }, []);
 
+  // ✅ Modifikasi handleSave - hanya untuk data teks, bukan avatar
   const handleSave = async () => {
     if (isUpdating) return;
 
@@ -179,10 +226,9 @@ export default function ProfilePage() {
 
     setIsUpdating(true);
     try {
-      // ✅ Perbaikan utama: Gunakan FormData untuk mengirim data
       const formDataToSend = new FormData();
 
-      // Tambahkan field teks yang diubah
+      // Tambahkan field teks yang diubah saja
       let hasChanges = false;
       if (editingSection === "personal") {
         if (formData.nama !== undefined && formData.nama.trim() !== (user.nama || "")) {
@@ -204,24 +250,16 @@ export default function ProfilePage() {
         }
       }
 
-      // ✅ Tambahkan file avatar jika ada
-      if (avatarFile) {
-        formDataToSend.append('avatar', avatarFile);
-        hasChanges = true;
-      }
-
-      // Cek apakah ada perubahan atau file yang diunggah
+      // Cek apakah ada perubahan
       if (!hasChanges) {
         toast.info("Tidak ada perubahan untuk disimpan.");
         setEditingSection(null);
         setFormData({});
-        setAvatarFile(null); // Reset file state
         return;
       }
 
       console.log("Sending FormData:", formDataToSend);
 
-      // Axios akan otomatis mengatur header 'Content-Type' menjadi 'multipart/form-data'
       const res = await api.patch("/api/auth/profile", formDataToSend);
 
       console.log("Response:", res.data);
@@ -242,7 +280,6 @@ export default function ProfilePage() {
         toast.success(res.data.message || "Profil berhasil diperbarui!");
         setEditingSection(null);
         setFormData({});
-        setAvatarFile(null); // Reset file state
       } else {
         throw new Error(res.data?.message || "Response tidak valid");
       }
@@ -255,7 +292,6 @@ export default function ProfilePage() {
         toast.info("Tidak ada perubahan yang perlu disimpan.");
         setEditingSection(null);
         setFormData({});
-        setAvatarFile(null);
         return;
       } else if (errorData?.detail === "Username already taken") {
         toast.error("Username sudah digunakan. Silakan pilih username lain.");
@@ -273,7 +309,6 @@ export default function ProfilePage() {
   const handleCancel = () => {
     setEditingSection(null);
     setFormData({});
-    setAvatarFile(null); // Reset file state saat batal
   };
 
   if (loading) {
@@ -298,6 +333,12 @@ export default function ProfilePage() {
         {/* Avatar */}
         <div className="flex flex-col md:flex-row items-center md:items-start gap-5 mb-6">
           <div className="relative w-28 h-28 flex-shrink-0">
+            {/* Loading overlay saat upload avatar */}
+            {isUploadingAvatar && (
+              <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center z-10">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+              </div>
+            )}
             <Image
               src={
                 avatarFile
@@ -317,15 +358,12 @@ export default function ProfilePage() {
             <button
               type="button"
               onClick={handleAvatarUploadClick}
-              className="bg-[#ffbb00] hover:bg-yellow-500 text-white font-semibold py-2 px-5 rounded-2xl shadow-[0_3px_0_#b45309] transition active:translate-y-0.5 cursor-pointer flex items-center gap-2"
+              disabled={isUploadingAvatar}
+              className="bg-[#ffbb00] hover:bg-yellow-500 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold py-2 px-5 rounded-2xl shadow-[0_3px_0_#b45309] transition active:translate-y-0.5 cursor-pointer flex items-center gap-2"
             >
-              <Upload size={16} /> UNGGAH FOTO KAMU
+              <Upload size={16} /> 
+              {isUploadingAvatar ? "MENGUNGGAH..." : "UNGGAH FOTO KAMU"}
             </button>
-            {/* {avatarFile && (
-              <p className="text-gray-600 text-xs mt-2">
-                File: {avatarFile.name}
-              </p>
-            )} */}
             <p className="text-gray-500 text-xs mt-4 text-center md:text-left">
               Setidaknya 800x800 px direkomendasikan.
             </p>
@@ -407,6 +445,7 @@ export default function ProfilePage() {
               : "Belum ada bio. Ceritakan sedikit tentang dirimu di sini!"}
           </p>
         </div>
+
         {/* BADGES USER */}
         <div className="bg-white rounded-2xl border border-[#ffbb00]/40 p-6 mb-8 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
@@ -451,6 +490,7 @@ export default function ProfilePage() {
             </div>
           )}
         </div>
+
         <div className="bg-white rounded-2xl border border-[#ffbb00]/40 p-6 mb-8 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <Image src="/icons/inventory.png" alt="Inventory" width={24} height={24} />
@@ -508,6 +548,7 @@ export default function ProfilePage() {
             </div>
           )}
         </div>
+
         {/* Status Info */}
         <div className="bg-white rounded-2xl border border-[#ffbb00]/40 p-6 mb-6 shadow-sm">
           <h2 className="font-semibold text-gray-800 mb-4">Status Akun</h2>

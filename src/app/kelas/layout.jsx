@@ -29,10 +29,10 @@ export default function KelasLayout({ children }) {
     setIsLoggedIn(!!token);
     getDailyProgress();
 
-    // Polling setiap 5 detik
+    // Polling setiap 15 detik
     intervalRef.current = setInterval(() => {
       getDailyProgress();
-    }, 5000);
+    }, 15000);
 
     return () => clearInterval(intervalRef.current);
   }, []);
@@ -43,16 +43,16 @@ export default function KelasLayout({ children }) {
   return (
     <div className="relative flex min-h-screen bg-white">
       {/* Konten utama */}
-      <main className="flex-1 p-6 md:p-0 md:pr-[17rem] md:pl-10 transition-all duration-300">
+      <main className="flex-1 p-4 md:p-6 lg:p-8 md:pr-80 lg:pr-96  transition-all lg:ml-[20rem]  min-h-[100dvh] duration-300">
         {children}
       </main>
 
       {/* Sidebar kanan */}
-      <aside className="hidden md:flex fixed right-35 top-0 bottom-0 w-[24rem] p-8 flex-col gap-6 overflow-y-auto bg-white">
+      <aside className="hidden md:flex fixed right-4 lg:right-8 top-4 bottom-4 w-72 lg:w-80 p-6 flex-col gap-6 overflow-y-auto">
         {/* Leaderboard */}
-        <div className="rounded-2xl p-6 shadow-md bg-white">
+        <div className="rounded-2xl p-6 shadow-md bg-white border border-gray-100">
           <Link href="/kelas/leaderboard" className="flex flex-col items-center">
-            <h3 className="font-semibold text-gray-800 mb-3 text-lg">
+            <h3 className="font-semibold text-gray-800 mb-3 text-base lg:text-lg">
               Buka Papan Skor!
             </h3>
           </Link>
@@ -61,11 +61,11 @@ export default function KelasLayout({ children }) {
             <Image
               src="/icons/score.png"
               alt="Score"
-              width={42}
-              height={42}
+              width={40}
+              height={40}
               className="flex-shrink-0"
             />
-            <p className="text-sm text-gray-600 leading-snug">
+            <p className="text-xs lg:text-sm text-gray-600 leading-snug">
               {userDailyProgress?.is_completed ? (
                 <>
                   <span className="font-semibold text-green-600">Selamat!</span>{" "}
@@ -90,14 +90,14 @@ export default function KelasLayout({ children }) {
         </div>
 
         {/* Misi Harian */}
-        <div className="rounded-2xl p-6 shadow-md bg-white">
+        <div className="rounded-2xl p-6 shadow-md bg-white border border-gray-100">
           <div className="flex justify-between items-center mb-3">
-            <h3 className="font-semibold text-gray-800 text-lg">Misi Harian</h3>
+            <h3 className="font-semibold text-gray-800 text-base lg:text-lg">Misi Harian</h3>
           </div>
-          <p className="text-sm text-gray-600 mb-2">Dapatkan 10 XP</p>
-          <div className="w-full h-4 bg-gray-200 rounded-full overflow-hidden">
+          <p className="text-xs lg:text-sm text-gray-600 mb-2">Dapatkan 10 XP</p>
+          <div className="w-full h-3 lg:h-4 bg-gray-200 rounded-full overflow-hidden">
             <div
-              className="h-full bg-[#ffbb00] transition-all duration-700"
+              className="h-full bg-[#ffbb00] transition-all duration-700 rounded-full"
               style={{
                 width: `${(completedSublevels / 3) * 100}%`,
               }}
@@ -115,14 +115,14 @@ export default function KelasLayout({ children }) {
 
         {/* Profil / Login */}
         {!isLoggedIn && (
-          <div className="rounded-2xl p-6 shadow-md bg-white text-center">
-            <p className="text-sm text-gray-700 mb-6">
+          <div className="rounded-2xl p-6 shadow-md bg-white border border-gray-100 text-center">
+            <p className="text-xs lg:text-sm text-gray-700 mb-5">
               Buat profil untuk menyimpan progresmu!
             </p>
-            <button className="w-full py-3 rounded-xl bg-[#32cd32] text-white font-semibold hover:opacity-90">
+            <button className="w-full py-2.5 lg:py-3 rounded-xl bg-[#32cd32] text-white text-sm font-semibold hover:bg-[#2ab82a] transition-all">
               Buat Profil
             </button>
-            <button className="w-full mt-3 py-3 rounded-xl bg-[#00bfff] text-white font-semibold hover:opacity-90">
+            <button className="w-full mt-3 py-2.5 lg:py-3 rounded-xl bg-[#00bfff] text-white text-sm font-semibold hover:bg-[#00a8e6] transition-all">
               Masuk
             </button>
           </div>
