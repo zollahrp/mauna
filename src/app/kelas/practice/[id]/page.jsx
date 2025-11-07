@@ -182,13 +182,13 @@ export default function PracticePage() {
     const percentage = (safeCorrect / total) * 100;
     let message = "Good Job!";
     if (percentage === 100) {
-      message = "Perfect!";
+      message = "Sempurna!";
     } else if (percentage >= 80) {
-      message = "Good Job!";
+      message = "Kerja Bagus!";
     } else if (percentage >= 60) {
-      message = "Nice Try!";
+      message = "Coba Lagi!";
     } else {
-      message = "Keep Trying!";
+      message = "Terus Berusaha!";
     }
 
     async function handleFinishQuiz() {

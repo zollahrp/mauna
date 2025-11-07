@@ -318,14 +318,6 @@ export default function SibiSpellingQuizCamera({ targetWord, onFinish, onWrong }
         }
     };
 
-    // === SKIP FUNCTION ===
-    const handleSkip = () => {
-        setIsFinished(true);
-        setMessage(`Soal dilewati. Kata: ${targetWord}`);
-        cleanupMediaPipe(); // Cleanup resources when skipped
-        if (onFinish) onFinish();
-    };
-
     // === 5. Tampilan UI ===
     return (
         <div className="flex flex-col items-center space-y-4 p-4 bg-white min-h-screen">
@@ -365,16 +357,6 @@ export default function SibiSpellingQuizCamera({ targetWord, onFinish, onWrong }
 
             {error && <p className="text-red-500">{error}</p>}
             {message && <p className="text-black text-lg font-medium">{message}</p>}
-
-            {!isFinished && (
-                <button
-                    onClick={handleSkip}
-                    disabled={isProcessing}
-                    className="mt-2 px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 disabled:bg-gray-400"
-                >
-                    Skip Huruf ⏭️
-                </button>
-            )}
 
             {isFinished && (
                 <button
