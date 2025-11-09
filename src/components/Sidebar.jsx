@@ -61,7 +61,8 @@ export default function Sidebar() {
   ];
 
   const handleLogout = () => {
-    localStorage.removeItem("Profile info");
+    localStorage.removeItem("ProfileInfo");
+    localStorage.removeItem("current_quiz");
     localStorage.removeItem("token");
     router.push("/auth/login");
   };
