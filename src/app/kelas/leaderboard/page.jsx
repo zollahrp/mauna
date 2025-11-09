@@ -5,13 +5,13 @@ import Image from "next/image";
 import api from "@/lib/axios";
 import { ChevronDown } from "lucide-react";
 
-const TIERS = ["Bronze", "Silver", "Gold", "Platinum", "Diamond"];
+const TIERS = ["Bronze", "Silver", "Gold", "Diamond", "Platinum"];
 const TIER_COLORS = {
   Bronze: "#cd7f32",
-  Silver: "#bfc1c2",
+  Silver: "#c0c0c0",
   Gold: "#ffd700",
-  Platinum: "#e5e4e2",
   Diamond: "#00bfff",
+  Platinum: "#e5e4e2",
 };
 
 export default function LeaderboardPage() {
@@ -39,9 +39,6 @@ export default function LeaderboardPage() {
   const filteredLeaderboard = leaderboard.filter(
     (user) => user.tier?.toLowerCase() === activeTier.toLowerCase()
   );
-
-  // Find border index (last user with this tier)
-  const borderIndex = filteredLeaderboard.length - 1;
 
   return (
     <div className="min-h-screen lg:-ml-[20rem] px-3 py-4 md:px-6 md:py-8 lg:ml-1 mb-16 md:mb-0">
@@ -130,10 +127,6 @@ export default function LeaderboardPage() {
                     key={user.user_id}
                     className={`px-4 py-4 md:px-6 md:py-5 transition-colors hover:bg-gray-50 ${
                       user.is_current_user ? "bg-yellow-50 border-l-4 border-yellow-400" : ""
-                    } ${
-                      index === borderIndex
-                        ? "border-b-4 border-[#00bfff]" // Pembatas kualifikasi
-                        : ""
                     }`}
                   >
                     {/* Mobile Layout */}
@@ -148,7 +141,7 @@ export default function LeaderboardPage() {
                           </div>
                         ) : (
                           <span className="text-gray-600 font-bold w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-sm">
-                            {user.rank}
+                            {index + 1}
                           </span>
                         )}
                       </div>
@@ -157,7 +150,7 @@ export default function LeaderboardPage() {
                       <div
                         className="w-10 h-10 rounded-full overflow-hidden border-2 flex-shrink-0"
                         style={{
-                          borderColor: TIER_COLORS[user.tier] || "#eee",
+                          borderColor: user.tier_color || TIER_COLORS[user.tier] || "#eee",
                         }}
                       >
                         {user.avatar ? (
@@ -188,10 +181,9 @@ export default function LeaderboardPage() {
                             </h3>
                             <div className="flex items-center gap-2 mt-1">
                               <span
-                                className="px-2 py-0.5 rounded text-xs font-bold"
+                                className="px-2 py-0.5 rounded text-xs font-bold text-white"
                                 style={{
-                                  background: TIER_COLORS[user.tier] || "#eee",
-                                  color: "#333",
+                                  background: user.tier_color || TIER_COLORS[user.tier] || "#eee",
                                 }}
                               >
                                 {user.tier}
@@ -221,7 +213,7 @@ export default function LeaderboardPage() {
                             </div>
                           ) : (
                             <span className="text-gray-600 font-bold w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-sm">
-                              {user.rank}
+                              {index + 1}
                             </span>
                           )}
                         </div>
@@ -230,7 +222,7 @@ export default function LeaderboardPage() {
                         <div
                           className="w-12 h-12 rounded-full overflow-hidden border-2 flex-shrink-0"
                           style={{
-                            borderColor: TIER_COLORS[user.tier] || "#eee",
+                            borderColor: user.tier_color || TIER_COLORS[user.tier] || "#eee",
                           }}
                         >
                           {user.avatar ? (
@@ -258,10 +250,9 @@ export default function LeaderboardPage() {
                             {user.username}
                           </span>
                           <span
-                            className="px-3 py-1 rounded text-xs font-bold flex-shrink-0"
+                            className="px-3 py-1 rounded text-xs font-bold text-white flex-shrink-0"
                             style={{
-                              background: TIER_COLORS[user.tier] || "#eee",
-                              color: "#333",
+                              background: user.tier_color || TIER_COLORS[user.tier] || "#eee",
                             }}
                           >
                             {user.tier}
@@ -280,15 +271,6 @@ export default function LeaderboardPage() {
                   </div>
                 ))}
               </div>
-
-              {/* Footer Info */}
-              {filteredLeaderboard.length > 0 && (
-                <div className="px-4 py-3 md:px-6 md:py-4 bg-blue-50 text-center border-t border-blue-100">
-                  <div className="text-xs md:text-sm text-[#00bfff]">
-                    <span className="font-semibold">Garis biru</span> menandakan batas kualifikasi tier {activeTier}
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </div>
