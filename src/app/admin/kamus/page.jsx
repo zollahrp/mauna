@@ -18,7 +18,7 @@ export default function KamusAdminPage() {
   async function fetchKamus() {
     setLoading(true);
     try {
-      const res = await api.get("/admin/kamus");
+      const res = await api.get("/api/admin/kamus/");
       setKamus(res.data?.data || []);
     } catch (e) {
       console.error(e);
@@ -43,9 +43,9 @@ export default function KamusAdminPage() {
     e.preventDefault();
     try {
       if (editingId) {
-        await api.put(`/admin/kamus/${editingId}`, form);
+        await api.put(`/api/admin/kamus/${editingId}`, form);
       } else {
-        await api.post(`/admin/kamus`, form);
+        await api.post(`/api/admin/kamus/`, form);
       }
       setForm({ word_text: "", definition: "", category: "alphabet", image_url_ref: "", video_url: "" });
       setEditingId(null);

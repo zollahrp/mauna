@@ -17,7 +17,13 @@ export default function UserAdminPage() {
     async function fetchUsers(q = "") {
         setLoading(true);
         try {
-            const res = await api.get("/admin/users", { params: q ? { q } : {} });
+            const res = await api.get("/api/admin/users/", {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    "Content-Type": "application/json"
+                },
+                params: q ? { q } : {}
+            });
             setUsers(res.data?.data || []);
         } catch (e) {
             console.error(e);
@@ -38,7 +44,7 @@ export default function UserAdminPage() {
             if (editingId) {
                 await api.put(`/admin/users/${editingId}`, form);
             } else {
-                await api.post(`/admin/users`, form);
+                await api.post(`/admin/users/`, form);
             }
             setForm({ username: "", email: "", password: "", nama: "", telpon: "", role: "user" });
             setEditingId(null);

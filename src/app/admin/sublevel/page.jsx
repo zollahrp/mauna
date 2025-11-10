@@ -19,7 +19,7 @@ export default function SubLevelAdminPage() {
   async function fetchAll() {
     setLoading(true);
     try {
-      const [a, b] = await Promise.all([api.get("/admin/sublevels"), api.get("/admin/levels")]);
+      const [a, b] = await Promise.all([api.get("/api/admin/sublevels/"), api.get("/api/admin/levels/")]);
       setSublevels(a.data?.data || []);
       setLevels(b.data?.data || []);
     } catch (e) {
@@ -34,9 +34,9 @@ export default function SubLevelAdminPage() {
     e.preventDefault();
     try {
       if (editingId) {
-        await api.put(`/admin/sublevels/${editingId}`, form);
+        await api.put(`/api/admin/sublevels/${editingId}`, form);
       } else {
-        await api.post(`/admin/sublevels`, form);
+        await api.post(`/api/admin/sublevels/`, form);
       }
       setShowForm(false);
       setEditingId(null);

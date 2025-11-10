@@ -18,7 +18,7 @@ export default function LevelAdminPage() {
   async function fetchLevels() {
     setLoading(true);
     try {
-      const res = await api.get("/admin/levels");
+      const res = await api.get("/api/admin/levels/");
       setLevels(res.data?.data || []);
     } catch (e) {
       console.error(e);
@@ -32,9 +32,9 @@ export default function LevelAdminPage() {
     try {
       let res;
       if (editingId) {
-        res = await api.put(`/admin/levels/${editingId}`, form);
+        res = await api.put(`/api/admin/levels/${editingId}`, form);
       } else {
-        res = await api.post(`/admin/levels`, form);
+        res = await api.post(`/api/admin/levels/`, form);
       }
       setForm({ name: "", description: "", tujuan: "" });
       setShowForm(false);
@@ -55,7 +55,7 @@ export default function LevelAdminPage() {
   async function handleDelete(id) {
     if (!confirm("Hapus level ini?")) return;
     try {
-      const res = await api.delete(`/admin/levels/${id}`);
+      const res = await api.delete(`/api/admin/levels/${id}`);
       fetchLevels();
     } catch (e) {
       console.error(e);

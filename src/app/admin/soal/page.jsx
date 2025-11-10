@@ -18,7 +18,7 @@ export default function SoalAdminPage() {
 	async function fetchAll() {
 		setLoading(true);
 		try {
-			const [soalRes, subRes] = await Promise.all([api.get("/admin/soal/list"), api.get("/admin/sublevels")]);
+			const [soalRes, subRes] = await Promise.all([api.get("/api/admin/soal/list"), api.get("/api/admin/sublevels/")]);
 			setSoal(soalRes.data?.data || []);
 			setSublevels(subRes.data?.data || []);
 		} catch (e) {
@@ -33,9 +33,9 @@ export default function SoalAdminPage() {
 		try {
 			const payload = { ...form, sublevel_id: Number(form.sublevel_id), dictionary_id: form.dictionary_id ? Number(form.dictionary_id) : null };
 			if (editingId) {
-				await api.patch(`/admin/soal/${editingId}`, payload);
+				await api.patch(`/api/admin/soal/${editingId}`, payload);
 			} else {
-				await api.post(`/admin/soal/create`, payload);
+				await api.post(`/api/admin/soal/create`, payload);
 			}
 			setForm({ pertanyaan: "", jawaban_benar: "", dictionary_id: "", sublevel_id: "", video_url: "" });
 			setShowForm(false);
